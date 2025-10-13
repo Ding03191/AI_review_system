@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>磨課師學習獎勵措施 審核平台 ver:0.0.2</title>
+<style>
+        body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background: #f0f0f0; }
+        header, footer { text-align: center; margin-bottom: 20px; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
+        label { display: block; margin-top: 10px; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 8px; }
+        button { margin-top: 15px; padding: 10px 20px; }
+        .feedback-window { margin-top: 20px; background: #f9f9f9; padding: 15px; border: 1px solid #ccc; border-radius: 6px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+<header>
+<h1>獎勵審核平台</h1>
+</header>
+<main>
+<div class="container">
+<form id="uploadForm">
+<label>案件編號</label><input name="caseNo" required="" type="text"/>
+<label>學生姓名</label><input name="name" required="" type="text"/>
+<label>學號</label><input name="studentId" required="" type="text"/>
+<label>學習項目</label><input name="project" required="" type="text"/>
+<label>特色或產業趨勢</label><input name="feature" required="" type="text"/>
+<label>課程名稱（以 , 分隔）</label><input name="courses" required="" type="text"/>
+<label>永續目標</label><input name="goals" required="" type="text"/>
+<label>總時數</label><input name="totalHours" required="" type="text"/>
+<label>上傳 PDF 檔案</label><input accept="application/pdf" name="file" required="" type="file"/><div class="topics">
+<h3>請勾選課程符合的主題：</h3>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 材料科學與化學工程
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 材料科學與化學工程
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 冷凍空調與能源技術
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 智慧製造與機電整合應用
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 積體電路與多媒體技術
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 數據分析與 AI 應用
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 智慧嵌入式系統
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 文創設計與行銷
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 景觀設計與工程施作
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 英語商務溝通與管理
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 產業自動化與管理
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 企業經營與管理
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 行銷策略與市場分析
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 系統資訊化及專案管理
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 健康產業及運動科技
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 永續發展與綠色科技
+        <span class="percentage"></span>
+</div>
+<div class="topic-item">
+<input name="topic" type="checkbox"/> 其他
+        <span class="percentage"></span>
+<input placeholder="請輸入其他主題" style="margin-left: 10px; width: 60%;" type="text"/>
+</div>
+</div>
+<button type="submit">送出審核</button>
+</form>
+<div class="feedback-window" id="feedbackWindow"></div>
+</div>
+</main>
+<footer>
+<p>審核系統版本 0.0.2</p>
+</footer>
+<script>
+        document.getElementById("uploadForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const form = e.target;
+            const file = form.file.files[0];
+
+            if (!file) {
+                alert("請選擇一份 PDF 檔案！");
+                return;
+            }
+
+            const instruction = `
+學生申請「磨課師學習獎勵」，請根據附件內容比對以下資料是否合格：
+
+編號：${form.caseNo.value}
+姓名：${form.name.value}（${form.studentId.value}）
+學習項目：${form.project.value}
+特色或產業趨勢：${form.feature.value}
+申請課程：${form.courses.value}
+永續目標：${form.goals.value}
+時數總計：${form.totalHours.value}
+
+請判斷是否符合下列條件：
+1. 課程名稱與證書名稱一致
+2. 課程開課時間符合要求（2025-01-01起）
+3. 總時數 >= 12 小時
+4. 通過標準需具備「測驗成績」
+5. 適用對象不得僅為國高中生
+6. 證書姓名需與學生姓名一致
+7. 至少一門課符合「${form.feature.value}」相關內容
+8. 申請課程名稱不得重複
+請以 JSON 格式回應。
+`;
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("instruction", instruction);
+            formData.append("rag", "true");
+
+            fetch("http://127.0.0.1:5000/python-api/analyzeApplication", {
+                method: "POST",
+                body: formData
+            })
+            .then(async res => {
+                const data = await res.json();
+                const feedbackDiv = document.getElementById("feedbackWindow");
+
+                if (!res.ok) {
+                    throw new Error(data.error || "未知錯誤");
+                }
+
+                feedbackDiv.innerHTML = `
+                    <ul>
+                        <li><strong>學號 ID:</strong> ${data.applicantStdn || "N/A"}</li>
+                        <li><strong>申請編號 No:</strong> ${data.applicantNo || "N/A"}</li>
+                        <li><strong>姓名:</strong> ${data.applicantName || "N/A"}</li>
+                        <li><strong>初步審核是否通過:</strong> ${data.isPassed ? " 通過" : "未通過"}</li>
+                        <li><strong>審核說明:</strong> ${data.aiFeedback || "無"}</li>
+                        <li><strong>申請日:</strong> ${data.applyDate || "N/A"}</li>
+                        <li><strong>申請時:</strong> ${data.applyTime || "N/A"}</li>
+                    </ul>
+                `;
+            })
+            .catch(err => {
+                document.getElementById("feedbackWindow").innerHTML = `<div class="error">❌ ${err.message}</div>`;
+            });
+        });
+    </script>
+</body>
+</html>
