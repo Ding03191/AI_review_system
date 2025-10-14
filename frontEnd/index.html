@@ -1,183 +1,206 @@
 <!DOCTYPE html>
-
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>磨課師學習獎勵措施 審核平台 ver:0.0.2</title>
-<style>
-        body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background: #f0f0f0; }
-        header, footer { text-align: center; margin-bottom: 20px; }
-        .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
-        label { display: block; margin-top: 10px; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 8px; }
-        button { margin-top: 15px; padding: 10px 20px; }
-        .feedback-window { margin-top: 20px; background: #f9f9f9; padding: 15px; border: 1px solid #ccc; border-radius: 6px; }
-        .error { color: red; font-weight: bold; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>審核系統｜教師時數 & 獎勵審核</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-<h1>獎勵審核平台</h1>
-</header>
-<main>
-<div class="container">
-<form id="uploadForm">
-<label>案件編號</label><input name="caseNo" required="" type="text"/>
-<label>學生姓名</label><input name="name" required="" type="text"/>
-<label>學號</label><input name="studentId" required="" type="text"/>
-<label>學習項目</label><input name="project" required="" type="text"/>
-<label>特色或產業趨勢</label><input name="feature" required="" type="text"/>
-<label>課程名稱（以 , 分隔）</label><input name="courses" required="" type="text"/>
-<label>永續目標</label><input name="goals" required="" type="text"/>
-<label>總時數</label><input name="totalHours" required="" type="text"/>
-<label>上傳 PDF 檔案</label><input accept="application/pdf" name="file" required="" type="file"/><div class="topics">
-<h3>請勾選課程符合的主題：</h3>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 材料科學與化學工程
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 材料科學與化學工程
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 冷凍空調與能源技術
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 智慧製造與機電整合應用
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 積體電路與多媒體技術
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 數據分析與 AI 應用
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 智慧嵌入式系統
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 文創設計與行銷
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 景觀設計與工程施作
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 英語商務溝通與管理
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 產業自動化與管理
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 企業經營與管理
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 行銷策略與市場分析
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 系統資訊化及專案管理
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 健康產業及運動科技
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 永續發展與綠色科技
-        <span class="percentage"></span>
-</div>
-<div class="topic-item">
-<input name="topic" type="checkbox"/> 其他
-        <span class="percentage"></span>
-<input placeholder="請輸入其他主題" style="margin-left: 10px; width: 60%;" type="text"/>
-</div>
-</div>
-<button type="submit">送出審核</button>
-</form>
-<div class="feedback-window" id="feedbackWindow"></div>
-</div>
-</main>
-<footer>
-<p>審核系統版本 0.0.2</p>
-</footer>
-<script>
-        document.getElementById("uploadForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-            const form = e.target;
-            const file = form.file.files[0];
 
-            if (!file) {
-                alert("請選擇一份 PDF 檔案！");
-                return;
-            }
+  <header class="appbar" role="banner">
+    <button id="btnOpenDrawer" class="icon-btn" aria-label="開啟主選單" aria-controls="drawer" aria-expanded="false">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true">
+      </span>
+      <h1>審核系統</h1>
+    </div>
+    <div class="appbar-actions">
+      <button id="btnTheme" class="chip" aria-label="切換主題">外觀</button>
+    </div>
+  </header>
 
-            const instruction = `
-學生申請「磨課師學習獎勵」，請根據附件內容比對以下資料是否合格：
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div class="avatar">AI</div>
+      <div class="who"><strong>智慧審核平台</strong><span>LLM + RAG</span>
+      </div>
+        <button id="btnCloseDrawer" class="icon-btn" aria-label="關閉主選單">
+          <span class="bar close"></span><span class="bar close">
+          </span>
+      </button>
+    </div>
 
-編號：${form.caseNo.value}
-姓名：${form.name.value}（${form.studentId.value}）
-學習項目：${form.project.value}
-特色或產業趨勢：${form.feature.value}
-申請課程：${form.courses.value}
-永續目標：${form.goals.value}
-時數總計：${form.totalHours.value}
+    <nav class="drawer-nav">
+      <button class="nav-accordion flat" data-acc="review"><span class="i i-folder"></span> 審核作業 <span class="caret"></span></button>
+      <div class="nav-panel open" data-panel="review">
+        <a href="#teacher" data-page="teacher" class="nav-item is-active"><span class="i i-teacher"></span> 教師時數申請</a>
+        <a href="#reward"  data-page="reward"  class="nav-item"><span class="i i-reward"></span> 獎勵審核</a>
+      </div>
 
-請判斷是否符合下列條件：
-1. 課程名稱與證書名稱一致
-2. 課程開課時間符合要求（2025-01-01起）
-3. 總時數 >= 12 小時
-4. 通過標準需具備「測驗成績」
-5. 適用對象不得僅為國高中生
-6. 證書姓名需與學生姓名一致
-7. 至少一門課符合「${form.feature.value}」相關內容
-8. 申請課程名稱不得重複
-請以 JSON 格式回應。
-`;
+      <button class="nav-accordion flat" data-acc="tools"><span class="i i-tools"></span> 工具 <span class="caret"></span></button>
+      <div class="nav-panel open" data-panel="tools">
+        <a href="#docs" data-page="docs" class="nav-item"><span class="i i-docs"></span> 使用說明</a>
+        <a href="#help" data-page="help" class="nav-item"><span class="i i-help"></span> 常見問題</a>
+      </div>
 
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("instruction", instruction);
-            formData.append("rag", "true");
+      <div class="spacer"></div>
+      <a href="#login" data-page="login" class="nav-item login"><span class="i i-login"></span> 登入</a>
+    </nav>
+  </aside>
 
-            fetch("http://127.0.0.1:5000/python-api/analyzeApplication", {
-                method: "POST",
-                body: formData
-            })
-            .then(async res => {
-                const data = await res.json();
-                const feedbackDiv = document.getElementById("feedbackWindow");
+  <div id="scrim" class="scrim" hidden></div>
 
-                if (!res.ok) {
-                    throw new Error(data.error || "未知錯誤");
-                }
+  <main class="container" role="main">
 
-                feedbackDiv.innerHTML = `
-                    <ul>
-                        <li><strong>學號 ID:</strong> ${data.applicantStdn || "N/A"}</li>
-                        <li><strong>申請編號 No:</strong> ${data.applicantNo || "N/A"}</li>
-                        <li><strong>姓名:</strong> ${data.applicantName || "N/A"}</li>
-                        <li><strong>初步審核是否通過:</strong> ${data.isPassed ? " 通過" : "未通過"}</li>
-                        <li><strong>審核說明:</strong> ${data.aiFeedback || "無"}</li>
-                        <li><strong>申請日:</strong> ${data.applyDate || "N/A"}</li>
-                        <li><strong>申請時:</strong> ${data.applyTime || "N/A"}</li>
-                    </ul>
-                `;
-            })
-            .catch(err => {
-                document.getElementById("feedbackWindow").innerHTML = `<div class="error">❌ ${err.message}</div>`;
-            });
-        });
-    </script>
+    <section class="hero">
+      <div class="hero-text">
+        <h2>讓審核更快、更準確</h2>
+
+      </div>
+      <div class="hero-cta">
+        <a class="btn primary" href="#teacher" data-page="teacher">開始使用</a>
+        <a class="btn" href="#docs" data-page="docs">查看說明</a>
+      </div>
+    </section>
+
+    <!-- 教師時數（左表單／右回饋滿版） -->
+    <section id="page-teacher" class="page">
+      <div class="section-hd"><h3>教師成長時數－檔案繳交</h3><p class="muted">填寫申請資料並上傳佐證，支援一般與高精準 OCR。</p></div>
+
+      <div class="layout-2col">
+        <article class="card">
+          <div class="card-hd">申請資訊</div>
+          <div class="card-bd">
+            <form id="formTeacher" class="form" novalidate>
+              <div class="grid g-2">
+                <label class="field"><span class="lbl req">教師姓名</span>
+                  <input name="teacherName" required placeholder="王小明"></label>
+                <label class="field"><span class="lbl req">任教單位</span>
+                  <input name="department" required placeholder="資訊工程系"></label>
+                <label class="field"><span class="lbl req">教師編號</span>
+                  <input name="teacherId" required placeholder="T12345"></label>
+                <label class="field"><span class="lbl">聯絡分機</span>
+                  <input name="ext" placeholder="1234"></label>
+              </div>
+
+              <div class="grid g-2">
+                <label class="field"><span class="lbl req">活動日期</span>
+                  <input name="eventDate" type="date" required></label>
+                <div class="field">
+                  <span class="lbl req">活動起訖時間</span>
+                  <div class="row row-time"><input name="startTime" type="time" required><span class="muted">～</span><input name="endTime" type="time" required></div>
+                </div>
+                <label class="field"><span class="lbl req">課程名稱</span><input name="courseTitle" required placeholder="生成式 AI 教學應用"></label>
+                <label class="field"><span class="lbl req">舉辦單位</span><input name="organizer" required placeholder="國立教育大學 教育學院"></label>
+              </div>
+
+              <label class="field"><span class="lbl req">與專業成長之關聯說明</span>
+                <textarea name="relevance" required placeholder="說明此次研習如何強化教學、課程設計或研究能量…"></textarea>
+              </label>
+
+              <div class="grid g-2">
+                <div class="field"><span class="lbl req">是否核發證書</span>
+                  <div class="row"><label class="choice"><input type="radio" name="hasCert" value="yes" required> 是</label><label class="choice"><input type="radio" name="hasCert" value="no"> 否</label></div>
+                </div>
+                <label id="certNoBox" class="field is-hidden"><span class="lbl">證書字號</span><input name="certNo" placeholder="A-2025-000123"></label>
+              </div>
+
+              <div class="field">
+                <span class="lbl req">上傳佐證附件（可多檔）</span>
+                <div class="uploader">
+                  <input id="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx" required>
+                  <p class="muted">請至少上傳 1 份：證書影本、時數條或研習手冊封面影本。</p>
+                  <ul id="fileList" class="file-list"></ul>
+                  <div class="row wrap">
+                    <button type="button" id="btnOcr" class="btn">一般 OCR</button>
+                    <button type="button" id="btnOcrGrid" class="btn">高精準 OCR（表格偵測）</button>
+                    <button type="button" id="btnPreview" class="btn ghost">預覽資料</button>
+                  </div>
+                </div>
+              </div>
+
+              <details class="note"><summary>送出前預覽</summary><pre id="preview" class="preview"></pre></details>
+              <div id="msg" class="msg"></div>
+              <div class="actions"><button type="reset" class="btn">清除</button><button type="submit" class="btn primary">送出申請</button></div>
+            </form>
+          </div>
+        </article>
+
+        <!-- 右側：AI 回饋「填滿」 -->
+        <article class="card side-fill">
+          <div class="card-hd">AI 審核回饋</div>
+          <div class="card-bd"><div id="result" class="kbd fillbox">尚未送出</div></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 獎勵審核（左表單／右回饋滿版） -->
+    <section id="page-reward" class="page is-hidden">
+      <div class="section-hd"><h3>磨課師學習獎勵審核</h3><p class="muted">上傳 PDF，AI 依規則檢核：名稱一致、時間、總時數、測驗成績、身分、姓名、主題、去重。</p></div>
+
+      <div class="layout-2col">
+        <article class="card">
+          <div class="card-hd">申請資料與上傳</div>
+          <div class="card-bd">
+            <form id="uploadForm" class="form">
+              <div class="grid g-2">
+                <label class="field"><span class="lbl req">案件編號</span><input name="caseNo" required></label>
+                <label class="field"><span class="lbl req">學生姓名</span><input name="name" required></label>
+                <label class="field"><span class="lbl req">學號</span><input name="studentId" required></label>
+                <label class="field"><span class="lbl req">學習項目</span><input name="project" required></label>
+                <label class="field"><span class="lbl req">特色或產業趨勢</span><input name="feature" required></label>
+                <label class="field"><span class="lbl req">永續目標</span><input name="goals" required></label>
+                <label class="field"><span class="lbl req">課程名稱（以 , 分隔）</span><input name="courses" required></label>
+                <label class="field"><span class="lbl req">總時數</span><input name="totalHours" required></label>
+
+                <!-- 主題：下拉式多選 -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl">請選擇課程主題（可多選）</span>
+                  <div id="topicMulti" class="multiselect" data-name="topics"></div>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">上傳 PDF 檔案</span>
+                  <input type="file" name="file" accept="application/pdf" required>
+                </label>
+              </div>
+
+              <div class="actions"><button class="btn primary" type="submit">送出審核</button></div>
+            </form>
+          </div>
+        </article>
+
+        <article class="card side-fill">
+          <div class="card-hd">AI 審核回饋</div>
+          <div class="card-bd"><div id="feedbackWindow" class="kbd fillbox">送出後將顯示回饋</div></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 其他頁面略（與前版相同） -->
+    <section id="page-docs" class="page is-hidden"><div class="section-hd"><h3>使用說明</h3></div>
+      <article class="card"><div class="card-bd"><ol class="steps"><li>到「審核作業」選擇功能</li><li>上傳檔案</li><li>需要時用高精準 OCR</li><li>確認並送出</li><li>查看 AI 回饋</li></ol></div></article>
+    </section>
+
+    <section id="page-help" class="page is-hidden"><div class="section-hd"><h3>常見問題</h3></div>
+      <article class="card"><div class="card-bd faq"><details><summary>Failed to fetch？</summary><p>通常為後端未啟動、CORS、或端點錯誤。</p></details></div></article>
+    </section>
+
+    <section id="page-login" class="page is-hidden"><div class="section-hd"><h3>登入</h3></div>
+      <article class="card narrow"><div class="card-bd">
+        <form id="formLogin" class="form">
+          <label class="field"><span class="lbl">帳號</span><input name="account" autocomplete="username"></label>
+          <label class="field"><span class="lbl">密碼</span><input name="password" type="password" autocomplete="current-password"></label>
+          <div class="actions"><button class="btn">取消</button><button class="btn primary" type="submit">登入</button></div>
+        </form>
+      </div></article>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
