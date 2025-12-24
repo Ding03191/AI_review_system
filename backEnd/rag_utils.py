@@ -42,3 +42,62 @@ def load_persistent_vectorstore(path="vectorstores/knowledge_base"):
 
     embeddings = OpenAIEmbeddings()
     return FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
+
+
+# backEnd/rag_utils.py（示意骨架，依你現況微調）
+def ask_rag(query: str, context: str, top_k: int = 5, force_citations: bool = True):
+    """
+    回傳欄位級結構（最小可用版，先用規則/簡易抽取頂著，之後再換成 LLM+RAG）
+    """
+    import re
+    # 簡易 baseline：用正則先抽，之後再接上你的向量庫檢索 + LLM
+    course = None
+    m_course = re.search(r"《([^》]+)》|課程[:：]\s*([^\n]+)", context)
+    if m_course:
+        course = m_course.group(1) or m_course.group(2)
+
+    hours = None
+    m_hours = re.search(r"(\d{1,3})\s*(小時|hr|hrs|hours?)", context, flags=re.I)
+    if m_hours:
+        hours = int(m_hours.group(1))
+
+    date_pat = r"(20\d{2})[./-](0?[1-9]|1[0-2])[./-](0?[1-9]|[12]\d|3[01])"
+    m_start = re.search(r"(起始|開始|自|from)\s*[:：]?\s*" + date_pat, context, flags=re.I)
+    m_any = re.search(date_pat, context)
+
+    fields = {
+        "course_name": {
+            "value": course,
+            "confidence": 0.70 if course else 0.0,
+            "evidence": {"chunk_id": 0, "offset": None} if course else None,
+            "retrieval_score": 0.70 if course else 0.0,
+            "abstain": course is None
+        },
+        "hours": {
+            "value": hours,
+            "confidence": 0.85 if hours is not None else 0.0,
+            "evidence": {"chunk_id": 0, "offset": None} if hours is not None else None,
+            "retrieval_score": 0.85 if hours is not None else 0.0,
+            "abstain": hours is None
+        },
+        "date_start": {
+            "value": f"{m_start.group(1)}-{m_start.group(2).zfill(2)}-{m_start.group(3).zfill(2)}" if m_start else (
+                     f"{m_any.group(1)}-{m_any.group(2).zfill(2)}-{m_any.group(3).zfill(2)}" if m_any else None),
+            "confidence": 0.65 if (m_start or m_any) else 0.0,
+            "evidence": {"chunk_id": 0, "offset": None} if (m_start or m_any) else None,
+            "retrieval_score": 0.65 if (m_start or m_any) else 0.0,
+            "abstain": not (m_start or m_any)
+        },
+        "date_end": {
+            "value": None,
+            "confidence": 0.0,
+            "evidence": None,
+            "retrieval_score": 0.0,
+            "abstain": True
+        }
+    }
+
+    return {
+        "model_ver": "baseline@0.1",
+        "fields": fields
+    }

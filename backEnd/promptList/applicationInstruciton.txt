@@ -36,6 +36,7 @@ According to the criteria above, reutrn the json format like following:
 - 若符合所有條件，請給出簡潔且正面的回饋內容。
 - 若部分課程不合格導致總時數不足，也應標明該課程違反的條件。
 - 若文件有顯示認證時數，必須正確擷取，不可忽略。
+-「測驗成績 89 分」是分數，不是分鐘；不得把「分」誤當「分鐘」。若同頁出現「閱讀時數 Y 分鐘」與「測驗成績 Z 分」，時數僅以『認證時數』或『閱讀時數』為準。
 
 ## Response Instructions
 

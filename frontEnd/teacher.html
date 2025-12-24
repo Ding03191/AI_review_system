@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>教師成長時數申請平台</title>
+  <link rel="stylesheet" href="teacher.css">
+</head>
+<body>
+
+  <header class="appbar" role="banner">
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true"></span>
+      <h1>教師成長時數申請平台</h1>
+    </div>
+    <div class="appbar-actions">
+      <!-- 右邊放一個連到審核系統的按鈕 -->
+      <a class="btn" href="index.html#reward">前往 AI 審核系統</a>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+
+    <section class="hero">
+      <div class="hero-text">
+        <h2>國立勤益科技大學 教師成長時數認證表線上申請</h2>
+        <p class="muted">提供教師填寫成長時數申請表，並匯出正式檔案後再交由學校流程審核。</p>
+      </div>
+      <div class="hero-cta">
+        <a class="btn primary" href="#form">開始填寫</a>
+      </div>
+    </section>
+
+    <!-- ===== Word 格式專用 PDF 表單 ===== -->
+    <div id="pdfForm" style="font-family: 'Noto Sans TC', sans-serif;">
+
+      <h2 style="text-align:center; margin:0;">國立勤益科技大學教師成長時數認證表（校外活動）</h2>
+      <p>一、由教師本人提出申請，於實際參與活動後，填具申請表送至教務處教學資源組。</p>
+      <p>二、需檢附至少一項佐證附件，例如：證書影本、時數條、研習手冊封面影本。</p>
+      <p>三、教師可至教師成長課程時數認證平台查詢個人時數：https://growup.ncut.edu.tw/</p>
+
+      <table border="1" cellspacing="0" cellpadding="6" width="100%" style="border-collapse:collapse;">
+        <tr>
+        <td class="label">教師姓名</td>
+        <td id="pdf_teacherName"></td>
+
+        <td class="label">任教單位</td>
+        <td id="pdf_department"></td>
+      </tr>
+
+      <tr>
+        <td class="label">教師編號</td>
+        <td id="pdf_teacherId"></td>
+
+        <td class="label">聯絡分機</td>
+        <td id="pdf_ext"></td>
+      </tr>
+
+        <tr>
+          <td class="label">活動時間</td>
+          <td colspan="3">
+            <span id="pdf_eventDate"></span>
+            <span id="pdf_start"></span> ～ <span id="pdf_end"></span>
+          </td>
+        </tr>
+
+
+        <tr>
+          <td>活動課程名稱</td>
+          <td class="label" id="pdf_courseTitle"></td>
+        </tr>
+
+        <tr>
+          <td>舉辦單位</td>
+          <td class="label" id="pdf_organizer"></td>
+        </tr>
+
+        <tr>
+          <td>請具體舉證與專業成長之關係</td>
+          <td class="label" id="pdf_relevance" style="height:120px;"></td>
+        </tr>
+
+        <tr>
+          <td>附件</td>
+          <td class="label">
+            <div id="pdf_files"></div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>是否核發證書</td>
+          <td class="label">
+            <span id="pdf_hasCert"></span>
+            <span id="pdf_certNo"></span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>申請人簽章</td>
+          <td style="height:60px;"></td>
+
+          <td>單位主管核章</td>
+          <td style="height:60px;"></td>
+        </tr>
+
+        <tr>
+          <td>認證時數（由教學資源組填寫）</td>
+          <td></td>
+
+          <td>處理人員（教學資源組）</td>
+          <td></td>
+        </tr>
+      </table>
+
+      <p style="text-align:right; margin-top:6px;">製表日期：114.06.20</p>
+    </div>
+
+    <section id="form" class="page">
+      <div id="printArea">
+      <div class="section-hd">
+        <h3>教師成長時數－申請表</h3>
+        <p class="muted">請填寫下列欄位，並上傳佐證附件，完成後可匯出 PDF 或 Word 檔。</p>
+      </div>
+
+
+      <article class="card">
+        <div class="card-hd">申請資訊</div>
+        <div class="card-bd">
+          <form id="formTeacher" class="form" novalidate>
+            <div class="grid g-2">
+              <label class="field">
+                <span class="lbl req">教師姓名</span>
+                <input name="teacherName" required placeholder="王小明">
+              </label>
+              <label class="field">
+                <span class="lbl req">任教單位</span>
+                <input name="department" required placeholder="資訊工程系">
+              </label>
+              <label class="field">
+                <span class="lbl req">教師編號</span>
+                <input name="teacherId" required placeholder="T12345">
+              </label>
+              <label class="field">
+                <span class="lbl">聯絡分機</span>
+                <input name="ext" placeholder="1234">
+              </label>
+            </div>
+
+            <div class="grid g-2">
+              <label class="field">
+                <span class="lbl req">活動日期</span>
+                <input name="eventDate" type="date" required>
+              </label>
+
+              <div class="field">
+                <span class="lbl req">活動起訖時間</span>
+                <div class="row row-time">
+                  <input name="startTime" type="time" required>
+                  <span class="muted">～</span>
+                  <input name="endTime" type="time" required>
+                </div>
+              </div>
+
+              <label class="field">
+                <span class="lbl req">活動名稱</span>
+                <input name="courseTitle" required placeholder="生成式 AI 教學應用">
+              </label>
+              <label class="field">
+                <span class="lbl req">舉辦單位</span>
+                <input name="organizer" required placeholder="國立教育大學 教育學院">
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="lbl req">教學專業成長</span>
+              <textarea name="relevance" required placeholder="說明此次研習如何強化教學、課程設計或研究能量…"></textarea>
+            </label>
+
+            <div class="grid g-2">
+              <div class="field">
+                <span class="lbl req">是否核發證書</span>
+                <div class="row">
+                  <label class="choice">
+                    <input type="radio" name="hasCert" value="yes" required> 是
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="hasCert" value="no"> 否
+                  </label>
+                </div>
+              </div>
+              <label id="certNoBox" class="field is-hidden">
+                <span class="lbl">證書字號</span>
+                <input name="certNo" placeholder="A-2025-000123">
+              </label>
+            </div>
+
+            <div class="field">
+              <span class="lbl req">上傳等佐證參與活動資料（可多檔）</span>
+              <div class="uploader">
+                <input id="files" type="file" multiple
+                       accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx" required>
+                <p class="muted">請至少上傳 1 份：證書影本、時數條或研習手冊封面影本。</p>
+                <ul id="fileList" class="file-list"></ul>
+
+                <!-- 匯出區 -->
+                <div class="export-actions">
+                  <div class="muted">⬇ 匯出這份申請資料</div>
+                  <div class="row wrap">
+                    <button type="button" id="btnExportPDF"  class="btn">匯出 PDF</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <details class="note">
+              <summary>送出前預覽（JSON）</summary>
+              <pre id="preview" class="preview"></pre>
+            </details>
+
+            <div id="msg" class="msg"></div>
+            <div class="actions">
+              <button type="reset" class="btn">清除</button>
+              <button type="submit" class="btn primary">前端檢查</button>
+            </div>
+          </form>
+        </div>
+      </article>
+
+      <!-- 新增：申請完成提醒文字 -->
+      <div class="important-tip">
+        <strong>最後步驟提醒：</strong>
+        <span>表單填寫完畢後，請匯出 PDF，並列印紙本後送出，方便完成申請。</span>
+      </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="teacher.js" defer></script>
+</body>
+</html>

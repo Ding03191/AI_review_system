@@ -1,0 +1,33 @@
+<!doctype html><html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>審核系統｜註冊</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="register">
+<section id="page-login" class="page fade-in">
+  <div class="auth-card slide-up">
+    <div class="auth-head">
+      <div class="badge"></div>
+      <div><div class="title">建立新帳號</div><div class="muted">用一個帳號管理你的申請與審核</div></div>
+    </div>
+    <div class="auth-body">
+      <form id="formRegister" autocomplete="off">
+        <div class="field floating"><input type="text" name="name" placeholder=" " required><label>姓名</label></div>
+        <div class="field floating"><input type="email" name="email" placeholder=" " required><label>Email</label></div>
+        <div class="field floating with-addon">
+          <input id="regPwd" type="password" name="password" placeholder=" " minlength="6" required>
+          <label>密碼（至少 6 碼）</label>
+          <button type="button" class="icon-btn" data-toggle="#regPwd" aria-label="顯示/隱藏密碼">👁</button>
+        </div>
+        <div id="registerError" class="auth-error"></div>
+        <div class="login-actions">
+          <button type="submit" class="btn primary">建立帳號</button>
+          <a class="btn ghost" href="login.html">返回登入</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+<script src="script.js"></script>
+</body></html>

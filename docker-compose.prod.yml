@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./backEnd
+      dockerfile: Dockerfile
+    container_name: promptrefine-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - DB_PATH=/app/db/scoringHistory.sqlite
+    user: "0:0"
+    volumes:
+      - ./backEnd/attachments:/app/attachments
+      - ./backEnd/vectorstores:/app/vectorstores
+      - ./backEnd/db:/app/db
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: nginx:alpine
+    container_name: promptrefine-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontEnd:/usr/share/nginx/html:ro
+    restart: always
+
+  # optional kb builder (run manually for heavy jobs)
+  kb-builder:
+    build:
+      context: ./backEnd
+      dockerfile: Dockerfile
+    container_name: promptrefine-kb-builder
+    command: ["python", "build_knowledge_base.py"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_PATH=/app/db/scoringHistory.sqlite
+    user: "0:0"
+    restart: "no"

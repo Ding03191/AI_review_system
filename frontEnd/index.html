@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>審核系統｜教師時數 & 獎勵審核</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- 可透過此 meta 設定後端 API 根路徑，方便在不同環境切換 -->
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>審核系統｜獎勵審核</title>
+  <link rel="stylesheet" href="review.css">
 </head>
 <body>
 
@@ -25,29 +27,52 @@
   <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-head">
       <div class="avatar">AI</div>
-      <div class="who"><strong>智慧審核平台</strong><span>LLM + RAG</span>
+      <div class="who">
+        <strong>智慧審核平台</strong>
+        <span>LLM + RAG</span>
       </div>
-        <button id="btnCloseDrawer" class="icon-btn" aria-label="關閉主選單">
-          <span class="bar close"></span><span class="bar close">
-          </span>
+      <button id="btnCloseDrawer" class="icon-btn" aria-label="關閉主選單">
+        <span class="bar close"></span><span class="bar close"></span>
       </button>
     </div>
 
     <nav class="drawer-nav">
-      <button class="nav-accordion flat" data-acc="review"><span class="i i-folder"></span> 審核作業 <span class="caret"></span></button>
+      <!-- 審核作業：只保留獎勵審核 -->
+      <button class="nav-accordion flat" data-acc="review">
+        <span class="i i-folder"></span> 審核作業 <span class="caret"></span>
+      </button>
       <div class="nav-panel open" data-panel="review">
-        <a href="#teacher" data-page="teacher" class="nav-item is-active"><span class="i i-teacher"></span> 教師時數申請</a>
-        <a href="#reward"  data-page="reward"  class="nav-item"><span class="i i-reward"></span> 獎勵審核</a>
+        <a href="#reward" data-page="reward" class="nav-item is-active">
+          <span class="i i-reward"></span> 獎勵審核
+        </a>
       </div>
 
-      <button class="nav-accordion flat" data-acc="tools"><span class="i i-tools"></span> 工具 <span class="caret"></span></button>
+      <!-- 工具區維持原本 -->
+      <button class="nav-accordion flat" data-acc="tools">
+        <span class="i i-tools"></span> 工具 <span class="caret"></span>
+      </button>
       <div class="nav-panel open" data-panel="tools">
-        <a href="#docs" data-page="docs" class="nav-item"><span class="i i-docs"></span> 使用說明</a>
-        <a href="#help" data-page="help" class="nav-item"><span class="i i-help"></span> 常見問題</a>
+        <a href="#docs" data-page="docs" class="nav-item">
+          <span class="i i-docs"></span> 使用說明
+        </a>
+        <a href="#help" data-page="help" class="nav-item">
+          <span class="i i-help"></span> 常見問題
+        </a>
+      </div>
+
+       <button class="nav-accordion flat" data-acc="platforms">
+        <span class="i i-teacher"></span> 其他系統 <span class="caret"></span>
+      </button>
+      <div class="nav-panel open" data-panel="platforms">
+        <a href="teacher.html" class="nav-item">
+          <span class="i i-teacher"></span> 教師成長時數平台
+        </a>
       </div>
 
       <div class="spacer"></div>
-      <a href="#login" data-page="login" class="nav-item login"><span class="i i-login"></span> 登入</a>
+      <a href="login.html" class="nav-item login">
+        <span class="i i-login"></span> 登入
+      </a>
     </nav>
   </aside>
 
@@ -58,88 +83,21 @@
     <section class="hero">
       <div class="hero-text">
         <h2>讓審核更快、更準確</h2>
-
+        <p class="muted">上傳磨課師證明文件，由 AI 協助檢查名稱、時數、測驗成績與永續目標等資訊。</p>
       </div>
       <div class="hero-cta">
-        <a class="btn primary" href="#teacher" data-page="teacher">開始使用</a>
+        <!-- 這裡改成直接開啟「獎勵審核」頁面 -->
+        <a class="btn primary" href="#reward" data-page="reward">開始使用</a>
         <a class="btn" href="#docs" data-page="docs">查看說明</a>
-      </div>
-    </section>
-
-    <!-- 教師時數（左表單／右回饋滿版） -->
-    <section id="page-teacher" class="page">
-      <div class="section-hd"><h3>教師成長時數－檔案繳交</h3><p class="muted">填寫申請資料並上傳佐證，支援一般與高精準 OCR。</p></div>
-
-      <div class="layout-2col">
-        <article class="card">
-          <div class="card-hd">申請資訊</div>
-          <div class="card-bd">
-            <form id="formTeacher" class="form" novalidate>
-              <div class="grid g-2">
-                <label class="field"><span class="lbl req">教師姓名</span>
-                  <input name="teacherName" required placeholder="王小明"></label>
-                <label class="field"><span class="lbl req">任教單位</span>
-                  <input name="department" required placeholder="資訊工程系"></label>
-                <label class="field"><span class="lbl req">教師編號</span>
-                  <input name="teacherId" required placeholder="T12345"></label>
-                <label class="field"><span class="lbl">聯絡分機</span>
-                  <input name="ext" placeholder="1234"></label>
-              </div>
-
-              <div class="grid g-2">
-                <label class="field"><span class="lbl req">活動日期</span>
-                  <input name="eventDate" type="date" required></label>
-                <div class="field">
-                  <span class="lbl req">活動起訖時間</span>
-                  <div class="row row-time"><input name="startTime" type="time" required><span class="muted">～</span><input name="endTime" type="time" required></div>
-                </div>
-                <label class="field"><span class="lbl req">課程名稱</span><input name="courseTitle" required placeholder="生成式 AI 教學應用"></label>
-                <label class="field"><span class="lbl req">舉辦單位</span><input name="organizer" required placeholder="國立教育大學 教育學院"></label>
-              </div>
-
-              <label class="field"><span class="lbl req">與專業成長之關聯說明</span>
-                <textarea name="relevance" required placeholder="說明此次研習如何強化教學、課程設計或研究能量…"></textarea>
-              </label>
-
-              <div class="grid g-2">
-                <div class="field"><span class="lbl req">是否核發證書</span>
-                  <div class="row"><label class="choice"><input type="radio" name="hasCert" value="yes" required> 是</label><label class="choice"><input type="radio" name="hasCert" value="no"> 否</label></div>
-                </div>
-                <label id="certNoBox" class="field is-hidden"><span class="lbl">證書字號</span><input name="certNo" placeholder="A-2025-000123"></label>
-              </div>
-
-              <div class="field">
-                <span class="lbl req">上傳佐證附件（可多檔）</span>
-                <div class="uploader">
-                  <input id="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx" required>
-                  <p class="muted">請至少上傳 1 份：證書影本、時數條或研習手冊封面影本。</p>
-                  <ul id="fileList" class="file-list"></ul>
-                  <div class="row wrap">
-                    <button type="button" id="btnOcr" class="btn">一般 OCR</button>
-                    <button type="button" id="btnOcrGrid" class="btn">高精準 OCR（表格偵測）</button>
-                    <button type="button" id="btnPreview" class="btn ghost">預覽資料</button>
-                  </div>
-                </div>
-              </div>
-
-              <details class="note"><summary>送出前預覽</summary><pre id="preview" class="preview"></pre></details>
-              <div id="msg" class="msg"></div>
-              <div class="actions"><button type="reset" class="btn">清除</button><button type="submit" class="btn primary">送出申請</button></div>
-            </form>
-          </div>
-        </article>
-
-        <!-- 右側：AI 回饋「填滿」 -->
-        <article class="card side-fill">
-          <div class="card-hd">AI 審核回饋</div>
-          <div class="card-bd"><div id="result" class="kbd fillbox">尚未送出</div></div>
-        </article>
       </div>
     </section>
 
     <!-- 獎勵審核（左表單／右回饋滿版） -->
     <section id="page-reward" class="page is-hidden">
-      <div class="section-hd"><h3>磨課師學習獎勵審核</h3><p class="muted">上傳 PDF，AI 依規則檢核：名稱一致、時間、總時數、測驗成績、身分、姓名、主題、去重。</p></div>
+      <div class="section-hd">
+        <h3>磨課師學習獎勵審核</h3>
+        <p class="muted">上傳 PDF，AI 依規則檢核：名稱一致、時間、總時數、測驗成績、身分、姓名、主題、去重。</p>
+      </div>
 
       <div class="layout-2col">
         <article class="card">
@@ -147,14 +105,53 @@
           <div class="card-bd">
             <form id="uploadForm" class="form">
               <div class="grid g-2">
-                <label class="field"><span class="lbl req">案件編號</span><input name="caseNo" required></label>
-                <label class="field"><span class="lbl req">學生姓名</span><input name="name" required></label>
-                <label class="field"><span class="lbl req">學號</span><input name="studentId" required></label>
-                <label class="field"><span class="lbl req">學習項目</span><input name="project" required></label>
-                <label class="field"><span class="lbl req">特色或產業趨勢</span><input name="feature" required></label>
-                <label class="field"><span class="lbl req">永續目標</span><input name="goals" required></label>
-                <label class="field"><span class="lbl req">課程名稱（以 , 分隔）</span><input name="courses" required></label>
-                <label class="field"><span class="lbl req">總時數</span><input name="totalHours" required></label>
+                <label class="field">
+                  <span class="lbl req">案件編號</span>
+                  <input name="caseNo" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學生姓名</span>
+                  <input name="name" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學號</span>
+                  <input name="studentId" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學習項目</span>
+                  <input name="project" required>
+                </label>
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">特色或產業趨勢</span>
+                  <input name="feature" required>
+                </label>
+
+                <!-- 永續目標（可多選，單欄） -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">永續目標（可多選）</span>
+                  <div id="sdgMulti" class="ms-host" style="margin-bottom:8px;"></div>
+                  <input type="hidden" id="sdg_values" name="sdg_values" value="">
+                  <div id="sdgChosen" class="tags" style="margin-top:6px;"></div>
+                </label>
+
+                <!-- 課程名稱（可多筆，支援新增/刪除） -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">課程名稱</span>
+                  <div id="courseList" class="course-list">
+                    <div class="course-row">
+                      <input type="text" name="courses" placeholder="輸入課程名稱">
+                      <button type="button" class="icon-btn sm course-remove" aria-label="移除課程">－</button>
+                    </div>
+                  </div>
+                  <div class="actions" style="justify-content:flex-start;gap:8px;margin-top:8px;">
+                    <button type="button" class="btn ghost" id="addCourseBtn">＋ 新增課程</button>
+                  </div>
+                </label>
+
+                <label class="field">
+                  <span class="lbl req">總時數</span>
+                  <input name="totalHours" required>
+                </label>
 
                 <!-- 主題：下拉式多選 -->
                 <label class="field" style="grid-column:1/-1;">
@@ -168,39 +165,53 @@
                 </label>
               </div>
 
-              <div class="actions"><button class="btn primary" type="submit">送出審核</button></div>
+              <div class="actions">
+                <button class="btn primary" type="submit">送出審核</button>
+              </div>
             </form>
           </div>
         </article>
 
         <article class="card side-fill">
           <div class="card-hd">AI 審核回饋</div>
-          <div class="card-bd"><div id="feedbackWindow" class="kbd fillbox">送出後將顯示回饋</div></div>
+          <div class="card-bd">
+            <div id="feedbackWindow" class="kbd fillbox">送出後將顯示回饋</div>
+          </div>
         </article>
       </div>
     </section>
 
-    <!-- 其他頁面略（與前版相同） -->
-    <section id="page-docs" class="page is-hidden"><div class="section-hd"><h3>使用說明</h3></div>
-      <article class="card"><div class="card-bd"><ol class="steps"><li>到「審核作業」選擇功能</li><li>上傳檔案</li><li>需要時用高精準 OCR</li><li>確認並送出</li><li>查看 AI 回饋</li></ol></div></article>
+    <!-- 使用說明 -->
+    <section id="page-docs" class="page is-hidden">
+      <div class="section-hd"><h3>使用說明</h3></div>
+      <article class="card">
+        <div class="card-bd">
+          <ol class="steps">
+            <li>在「審核作業」選擇「獎勵審核」。</li>
+            <li>填寫案件編號、學生資料與課程資訊。</li>
+            <li>上傳磨課師相關 PDF 檔案。</li>
+            <li>送出後等待 AI 完成審核。</li>
+            <li>在右側「AI 審核回饋」查看結果並人工覆核。</li>
+          </ol>
+        </div>
+      </article>
     </section>
 
-    <section id="page-help" class="page is-hidden"><div class="section-hd"><h3>常見問題</h3></div>
-      <article class="card"><div class="card-bd faq"><details><summary>Failed to fetch？</summary><p>通常為後端未啟動、CORS、或端點錯誤。</p></details></div></article>
-    </section>
-
-    <section id="page-login" class="page is-hidden"><div class="section-hd"><h3>登入</h3></div>
-      <article class="card narrow"><div class="card-bd">
-        <form id="formLogin" class="form">
-          <label class="field"><span class="lbl">帳號</span><input name="account" autocomplete="username"></label>
-          <label class="field"><span class="lbl">密碼</span><input name="password" type="password" autocomplete="current-password"></label>
-          <div class="actions"><button class="btn">取消</button><button class="btn primary" type="submit">登入</button></div>
-        </form>
-      </div></article>
+    <!-- 常見問題 -->
+    <section id="page-help" class="page is-hidden">
+      <div class="section-hd"><h3>常見問題</h3></div>
+      <article class="card">
+        <div class="card-bd faq">
+          <details>
+            <summary>Failed to fetch？</summary>
+            <p>通常為後端未啟動、CORS 設定、或端點網址錯誤所造成，請確認 Flask 服務是否啟動，以及前端 API_BASE 設定是否一致。</p>
+          </details>
+        </div>
+      </article>
     </section>
 
   </main>
 
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>

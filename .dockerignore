@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+gaienv/
+.git/
+node_modules/
+*.egg-info/
+dist/
+.venv/
+*.log
+*.sqlite3
+.DS_Store

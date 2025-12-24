@@ -1,0 +1,354 @@
+:root{
+  --bg:#f6f7fb;
+  --card:#fff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --border:#e6e8ef;
+  --accent:#3b82f6;
+  --accent-ink:#0b63e6;
+  --ok:#16a34a;
+  --danger:#dc2626;
+  --scrim:rgba(15,23,42,.45);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:15.5px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC;
+}
+
+/* App bar（上方標題列） */
+.appbar{
+  position:sticky;
+  top:0;
+  z-index:80;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 16px;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 2px 10px rgba(15,23,42,.04)
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand h1{
+  font-size:18px;
+  margin:0;
+}
+.brand-badge{
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),#9cd5ff);
+}
+.appbar-actions{ margin-left:auto; }
+
+/* Layout */
+.container{
+  max-width:1200px;              /* 視覺收斂一點 */
+  margin:20px auto;
+  padding:0 16px;
+}
+
+/* Hero 區塊（上面那塊簡介 + 按鈕） */
+.hero{
+  display:flex;
+  gap:24px;
+  align-items:center;
+  justify-content:space-between;
+  background:linear-gradient(180deg,#ffffff,#f9fbff);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 6px 20px rgba(15,23,42,.05);
+}
+.hero-text h2{ margin:0 0 6px; }
+.hero-text p{ margin:0; }
+.hero-cta .btn{ min-width:140px; }
+
+/* 區塊標題 */
+.section-hd{ margin:20px 2px 10px; }
+.section-hd h3{ margin:0 0 4px 0; }
+.section-hd .muted{ margin:0; }
+
+/* Card */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 6px 20px rgba(15,23,42,.05);
+  overflow:hidden;
+}
+.card-hd{
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  font-weight:700;
+}
+.card-bd{ padding:20px; }
+
+/* Grid / Form */
+.grid{
+  display:grid;
+  gap:14px;
+}
+.g-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media (max-width:840px){
+  .g-2{ grid-template-columns:1fr; }
+}
+
+.form .field{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.lbl{
+  display:block;
+  margin-bottom:4px;
+  font-weight:600;
+  color:#374151;
+}
+.req::after{
+  content:" *";
+  color:var(--danger);
+}
+input,textarea,select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid #d6dae6;
+  background:#fff;
+  color:var(--text);
+}
+textarea{
+  min-height:96px;
+  resize:vertical;
+}
+
+.row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.row.wrap{
+  flex-wrap:wrap;
+}
+.row-time input{
+  flex:1;
+  min-width:0;
+}
+
+.choice{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+.is-hidden{ display:none !important; }
+
+/* Uploader & misc */
+.uploader{
+  border:1px dashed #d6dae6;
+  border-radius:12px;
+  padding:12px;
+  background:#fbfcff;
+}
+.file-list{
+  margin:8px 0 0 18px;
+  padding-left:0;
+}
+.file-list li{ margin-bottom:2px; }
+
+.preview{
+  white-space:pre-wrap;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  font-size:13px;
+}
+
+.note{
+  background:#fbfcff;
+  border:1px dashed #e2e8f0;
+  border-radius:12px;
+  padding:8px 12px;
+  margin-top:8px;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:12px;
+}
+
+/* Buttons */
+.btn{
+  border:1px solid #d6dae6;
+  background:#fff;
+  border-radius:12px;
+  padding:10px 16px;
+  cursor:pointer;
+  font:inherit;
+}
+.btn:hover{
+  border-color:#c1c7d6;
+}
+.btn.primary{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.btn.primary:hover{
+  background:var(--accent-ink);
+  border-color:var(--accent-ink);
+}
+
+/* 訊息 & 輔助文字 */
+.msg{
+  margin-top:6px;
+  font-size:14px;
+}
+.muted{ color:var(--muted); }
+
+/* 匯出區 */
+.export-actions{
+  margin-top:14px;
+  padding:12px;
+  border:1px dashed var(--border);
+  border-radius:12px;
+  background:#fbfcff;
+}
+.export-actions .row .btn{ min-width:120px; }
+
+.important-tip{
+  margin:16px 2px 0;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--danger);
+  background:rgba(251, 75, 75, 0.06);
+  color:#ff0101;
+  font-weight:600;
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+
+.important-tip::before{
+  content:"！";
+  display:inline-flex;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  border:2px solid currentColor;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  margin-top:1px;
+}
+/* ===== PDF 匯出版面（做成你截圖那種 Word 表格風格） ===== */
+#pdfForm{
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 12mm 10mm;
+  background: #fff;
+  color: #111;
+  font-family: "Noto Sans TC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+
+/* 標題與說明 */
+#pdfForm h2{
+  font-size: 18px;
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-weight: 800;
+}
+#pdfForm p{
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* 表格本體 */
+#pdfForm table{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;          /* 固定欄寬，版面才像 Word */
+  margin-top: 10px;
+  font-size: 12px;
+}
+#pdfForm td{
+  border: 1px solid #444;       /* 深灰線 */
+  padding: 8px 10px;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+/* 左側欄位標題（灰底） */
+#pdfForm td.label{
+  background: #f1f3f6;
+  font-weight: 700;
+  width: 20%;
+  white-space: nowrap;
+}
+
+/* 讓「簽章」那幾格有高度 */
+#pdfForm .sign-box{
+  height: 58px;
+}
+
+/* 關聯說明那格高度 */
+#pdfForm .relevance-box{
+  height: 110px;
+}
+
+/* 附件用換行顯示 */
+#pdf_files{
+  white-space: pre-wrap;
+}
+
+/* 製表日期右下角 */
+#pdfForm .made-date{
+  text-align: right;
+  margin-top: 8px;
+  font-size: 12px;
+}
+/* ===== 列印成 PDF：只印 pdfForm，其它全部不印 ===== */
+@media print {
+  /* 印的時候不要背景 */
+  body { background: #fff !important; }
+
+  /* 先全部隱藏 */
+  body * { visibility: hidden !important; }
+
+  /* 只顯示 pdfForm */
+  #pdfForm, #pdfForm * { visibility: visible !important; }
+
+  /* 固定從左上角開始印 */
+  #pdfForm {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    margin: 0 !important;
+  }
+
+  /* A4 + 邊界 */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* 不要印 appbar（保險） */
+  .appbar { display: none !important; }
+}
+

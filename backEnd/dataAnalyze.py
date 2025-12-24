@@ -1,9 +1,9 @@
 import os
+import shutil
 from PyPDF2 import PdfReader
 import pdfplumber
 import openai
 import pytesseract
-import shutil
 from PIL import Image, ImageEnhance, ImageOps  # 未來支援圖片上傳
 # custom modules
 import functions as func
@@ -11,60 +11,84 @@ import functions as func
 from rag_utils import split_text_into_chunks, create_vectorstore, retrieve_relevant_chunks, load_persistent_vectorstore
 
 # 設定 Tesseract 執行檔位置（Windows）
-pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD") or shutil.which("tesseract")
+# 先看有沒有環境變數，沒有就用 C:\Tesseract-OCR\tesseract.exe
+tesseract_path = (
+    os.getenv("TESSERACT_CMD")
+    or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    or shutil.which("tesseract")
+)
+
+if not tesseract_path or not os.path.exists(tesseract_path):
+    # 不要整個程式直接 raise；先允許僅文字層解析，OCR 用到時再回報
+    print("[WARN] 找不到 Tesseract，可讀 PDF 仍可處理；需要 OCR 時請安裝或設定 TESSERACT_CMD")
+else:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    print(f"使用 Tesseract 執行檔：{tesseract_path}")
 
 
 def preprocess_image(img):
-    img = img.convert("L")  # 灰階
-    img = ImageOps.invert(img)  # 反轉（白底黑字）
-    img = img.resize((img.width * 2, img.height * 2))  # 放大影像
-    img = ImageEnhance.Contrast(img).enhance(3)
-    img = ImageEnhance.Sharpness(img).enhance(3)
+    # 灰階 + 自動對比 + 輕微銳化；避免強制反相（有些證書底色會被反轉）
+    img = img.convert("L")
+    img = ImageOps.autocontrast(img)
+    # 放大 1.5 倍有助中文 OCR（LANCZOS）
+    img = img.resize((int(img.width * 1.5), int(img.height * 1.5)), Image.Resampling.LANCZOS)
+    # 適度銳化
+    img = ImageEnhance.Sharpness(img).enhance(1.5)
+    img = ImageEnhance.Contrast(img).enhance(1.3)
     return img
 
 
 # 處理檔案
-def extract_file_content(file_path):
-    extension = os.path.splitext(file_path)[-1].lower()
+def extract_file_content(file_path, ocr_dpi=400):
+    ext = os.path.splitext(file_path)[-1].lower()
+
+    def _need_ocr(s: str) -> bool:
+        # 找不到這些關鍵詞才啟用 OCR（避免多做工）
+        keys = ["認證時數", "閱讀時數", "測驗成績", "通過標準", "學員姓名", "課程名稱"]
+        return not any(k in (s or "") for k in keys)
 
     try:
-        if extension == '.pdf':
-            reader = PdfReader(file_path)
-            text = ''.join([page.extract_text() or "" for page in reader.pages])
+        if ext == ".pdf":
+            # 先抽文字層
+            text = ""
+            try:
+                reader = PdfReader(file_path)
+                text = "".join([p.extract_text() or "" for p in reader.pages])
+            except Exception:
+                text = ""
 
-            if text.strip():
-                print(" 檔案為可讀文字型 PDF，不使用 OCR")
+            if text and text.strip() and not _need_ocr(text):
+                print(" 檔案為可讀文字型 PDF（已含關鍵字），暫不啟用 OCR")
                 return text.strip()
 
-            # PDF 為圖片格式 → 啟用 OCR
-            print(" 啟用 OCR 模式處理圖片 PDF")
-            text = ""
+            # 需要 OCR 時才進行；若未安裝 Tesseract，回傳友善訊息
+            if not (pytesseract.pytesseract.tesseract_cmd and os.path.exists(pytesseract.pytesseract.tesseract_cmd)):
+                return (text or "") + "\n[OCR 提示] 未偵測到 Tesseract，可讀文字已回傳；若需識別圖片內容請安裝 Tesseract 或設定 TESSERACT_CMD"
+
+            print(f" 啟用 OCR 模式處理圖片/混合 PDF，dpi={ocr_dpi}")
+            ocr_all = []
             with pdfplumber.open(file_path) as pdf:
                 for i, page in enumerate(pdf.pages):
                     try:
-                        img = page.to_image(resolution=500).original.convert("RGB")  # 提高解析度
-                        processed_img = preprocess_image(img)
-                        ocr_text = pytesseract.image_to_string(processed_img, lang='chi_tra+eng')
+                        img = page.to_image(resolution=ocr_dpi).original.convert("RGB")
+                        processed = preprocess_image(img)
+                        ocr_text = pytesseract.image_to_string(processed, lang="chi_tra+eng", config="--oem 3 --psm 6")
+                        ocr_all.append(f"[頁面{i + 1}]\n{ocr_text}")
+                    except Exception as e:
+                        ocr_all.append(f"[頁面{i + 1}] OCR 發生錯誤：{e}")
+            merged = (text or "") + "\n\n" + "\n".join(ocr_all)
+            return merged.strip() or " OCR 無法辨識任何文字，請確認 PDF 清晰度與格式。"
 
-                        print(f" OCR 第 {i + 1} 頁內容:\n{ocr_text[:200]}...\n")  # Preview
-                        text += f"\n[頁面{i + 1}]\n" + ocr_text
-                    except Exception as img_err:
-                        print(f" 圖像處理錯誤（第 {i + 1} 頁）: {img_err}")
-                        text += f"\n[頁面{i + 1}] 圖像處理錯誤: {img_err}\n"
-
-            if not text.strip():
-                return " OCR 無法辨識任何文字，請確認 PDF 清晰度與格式。"
-            return text.strip()
-
-        elif extension in ['.png', '.jpg', '.jpeg']:
+        elif ext in [".png", ".jpg", ".jpeg"]:
+            if not (pytesseract.pytesseract.tesseract_cmd and os.path.exists(pytesseract.pytesseract.tesseract_cmd)):
+                return " [OCR 提示] 未偵測到 Tesseract，無法解析圖片。"
             image = Image.open(file_path).convert("RGB")
-            processed_img = preprocess_image(image)
-            ocr_text = pytesseract.image_to_string(processed_img, lang='chi_tra+eng')
-            print(" 單張圖片 OCR 預覽：", ocr_text[:200])
+            processed = preprocess_image(image)
+            ocr_text = pytesseract.image_to_string(processed, lang="chi_tra+eng", config="--oem 3 --psm 6")
             return ocr_text.strip()
 
         else:
-            return f"Unsupported file type: {extension}"
+            return f"Unsupported file type: {ext}"
 
     except Exception as e:
         return f" Error processing file: {e}"

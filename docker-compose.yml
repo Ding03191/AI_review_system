@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backEnd
+      dockerfile: Dockerfile
+    container_name: review-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    user: "0:0"
+    volumes:
+      - ./backEnd/attachments:/app/attachments
+      - ./backEnd/vectorstores:/app/vectorstores
+      - ./backEnd/db:/app/db
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: review-frontEnd
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontEnd:/usr/share/nginx/html:ro
+    restart: unless-stopped

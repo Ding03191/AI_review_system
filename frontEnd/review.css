@@ -159,10 +159,12 @@ body{margin:0;
 [hidden]{display:none !important}
 
 /* Layout */
-.container{max-width:1360px;
-  margin:20px auto;
-  padding:0 16px
+.container{
+  max-width: calc(var(--content-max) + 2*var(--side-pad));
+  margin: 20px auto;
+  padding: 0 var(--side-pad);
 }
+
 .hero{display:flex;gap:24px;
   align-items:center;
   justify-content:space-between;
@@ -395,3 +397,203 @@ textarea{min-height:96px;
   justify-content:flex-end
 }
 .btn.copy{border-color:#d6dae6}
+
+/* 讓表單中的下拉面板可以超出卡片邊界顯示 */
+.card { overflow: visible; }
+
+/* 多選下拉：更像元件的尺寸/定位與動畫 */
+.ms-host,
+.multiselect { position: relative; }
+
+.ms-trigger {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid #d6dae6;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.ms-trigger:after { content:" ▾"; float:right; opacity:.6; }
+
+/* 面板依附在 trigger 下方；寬度不會蓋整個卡片 */
+.ms-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(520px, 100%);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 28px rgba(15,23,42,.14);
+  padding: 10px;
+  display: none;
+  max-height: 320px;
+  overflow: auto;
+  animation: msDrop .16s ease-out;
+}
+
+/* 如果用 JS 切到向上展開 */
+.ms-panel.drop-up {
+  top: auto;
+  bottom: calc(100% + 8px);
+  box-shadow: 0 -12px 24px rgba(15,23,42,.12);
+}
+
+.ms-panel.open { display:block; }
+
+@keyframes msDrop { from { transform: translateY(-4px); opacity: .0; } to { transform: none; opacity: 1; } }
+
+.ms-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 改成單欄 */
+  gap: 8px;
+}
+@media (max-width: 840px) { .ms-grid { grid-template-columns: 1fr; } }
+
+.ms-opt {
+  display:grid;
+  grid-template-columns: 20px 1fr;
+  align-items:center;
+  gap:8px;
+  border:1px solid #e6e8ef;
+  border-radius:10px;
+  padding:8px 10px;
+  background:#fff;
+}
+.ms-opt:hover { background:#f7faff; }
+.ms-opt input { width:16px; height:16px; margin:0; }
+
+.ms-actions {
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  margin-top:8px
+}
+
+/* 已選項目的小標籤（展示區） */
+.tags { display:flex; flex-wrap:wrap; gap:6px; }
+.tag  { font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; background:#fff; }
+
+/* 雙欄：永續目標 + 敘述框 */
+.field-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .field-2col { grid-template-columns: 1fr; }
+}
+.lbl {
+  display:block;
+  margin-bottom:4px;
+  font-weight:600;
+  color:#374151;
+}
+.req { color:#d00; margin-left:3px; }
+
+/* 雙欄：永續目標 + 敘述框 */
+.field-2col{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+  align-items:start;
+}
+@media (max-width:768px){
+  .field-2col{ grid-template-columns:1fr; }
+}
+/* 統一 label 與輸入 */
+.lbl{ display:block; margin-bottom:4px; font-weight:600; color:#374151; }
+
+.course-list{display:flex;flex-direction:column;gap:8px}
+.course-row{display:flex;gap:8px;align-items:center}
+.course-row input{flex:1;min-width:0}
+.icon-btn.sm{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+.icon-btn.sm:hover{border-color:#c1c7d6;background:#f8fafc}
+.icon-btn.sm.disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== Login page polish ===== */
+#page-login {
+  display:grid;
+  place-items:center;
+  min-height: calc(100vh - 100px);
+  padding: 24px 16px;
+  background: linear-gradient(180deg, #ffffff, #f3f6ff);
+}
+
+.login-card{
+  width: min(420px, 92vw);
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(15,23,42,.08);
+  overflow: hidden;
+}
+
+.login-head{
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+}
+.login-head .badge{
+  width:36px;height:36px;border-radius:10px;
+  background: linear-gradient(135deg, var(--accent), #9cd5ff);
+}
+.login-body{ padding: 18px 20px; display:grid; gap:14px; }
+
+.field.floating{
+  position: relative;
+}
+.field.floating input{
+  width:100%; padding: 14px 12px 12px 12px;
+  border:1px solid #d6dae6; border-radius: 12px;
+  background:#fff;
+}
+.field.floating label{
+  position:absolute; left:12px; top:10px;
+  font-size: 13px; color:#64748b; transition: all .15s;
+  padding: 0 4px; background:#fff;
+}
+.field.floating input:focus + label,
+.field.floating input:not(:placeholder-shown) + label{
+  top:-8px; font-size: 12px; color: var(--accent);
+}
+
+.login-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:4px; }
+.login-error{ color: var(--danger); font-size: 14px; min-height: 18px; }
+
+/* submit loading 狀態 */
+button[data-loading="true"]{ position:relative; color: transparent; }
+button[data-loading="true"]::after{
+  content:'登入中…'; color:#fff; position:absolute; inset:0;
+  display:grid; place-items:center;
+}
+
+/* === Animations for auth pages === */
+.fade-in{ animation:fadeIn .28s ease-out both; }
+.slide-up{ animation:slideUp .32s ease-out both; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+@keyframes slideUp{ from{ transform:translateY(10px); opacity:0 }
+                    to{ transform:none; opacity:1 } }
+
+                    /* === 版面收斂 === */
+.container{ max-width:1200px; }                 /* 稍微收窄，視覺更集中 */
+.section-hd{ margin:20px 2px 10px; }
+.card-bd{ padding:20px; }
+.grid{ gap:14px; }
+.form .field{ gap:4px; }
+input,textarea,select{ padding:10px 12px; }
+.actions{ margin-top:12px; }
+
+/* 匯出區 */
+.export-actions{
+  margin-top:14px;
+  padding:12px;
+  border:1px dashed var(--border);
+  border-radius:12px;
+  background:#fbfcff;
+}
+.export-actions .row .btn{ min-width:120px; }
+

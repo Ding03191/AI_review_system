@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>審核系統｜登入</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="login">
+<section id="page-login" class="page fade-in">
+  <div class="auth-card slide-up">
+    <div class="auth-head">
+      <div class="badge"></div>
+      <div><div class="title">審核系統</div><div id="loginBadge" class="muted">未登入</div></div>
+    </div>
+    <div class="auth-body">
+      <form id="formLogin" autocomplete="off">
+        <div class="field floating">
+          <input type="email" name="account" placeholder=" " required>
+          <label>Email 帳號</label>
+        </div>
+        <div class="field floating with-addon">
+          <input id="loginPwd" type="password" name="password" placeholder=" " minlength="6" required>
+          <label>密碼</label>
+          <button type="button" class="icon-btn" data-toggle="#loginPwd" aria-label="顯示/隱藏密碼">👁</button>
+        </div>
+        <div class="row between">
+          <label class="checkbox"><input type="checkbox" id="rememberMe"> 記住我</label>
+          <a class="muted small" href="register.html">還沒有帳號？註冊</a>
+        </div>
+        <div id="loginError" class="auth-error"></div>
+        <div class="login-actions"><button type="submit" class="btn primary">登入</button></div>
+      </form>
+    </div>
+  </div>
+</section>
+<script src="script.js"></script>
+</body></html>
