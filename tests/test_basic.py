@@ -2,12 +2,12 @@ import os
 import pathlib
 import sys
 
+from promptrefine.utils import functions
+from promptrefine.db import dbStoring
+
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT_DIR / "backEnd" / "src"
 sys.path.insert(0, str(SRC_DIR))
-
-from promptrefine.utils import functions
-from promptrefine.db import dbStoring
 
 
 def test_token_used_creates_file(tmp_path, monkeypatch):

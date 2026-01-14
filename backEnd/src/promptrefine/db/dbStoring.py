@@ -142,6 +142,47 @@ def fetch_all_results():
     conn.close()
     return results
 
+
+def fetch_records_by_date(apply_date: str):
+    conn = _connect()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        f"""
+        SELECT applicantStdn,
+               applicantNo,
+               applicantName,
+               file_name,
+               pdf_path,
+               isPassed,
+               aiFeedback,
+               applyDate,
+               applyTime
+        FROM {TABLE_NAME}
+        WHERE applyDate = ?
+        ORDER BY applyTime
+        """,
+        (apply_date,),
+    )
+    rows = c.fetchall()
+    conn.close()
+
+    records = []
+    for row in rows:
+        records.append(
+            {
+                "applicantStdn": row["applicantStdn"],
+                "applicantNo": row["applicantNo"],
+                "applicantName": row["applicantName"],
+                "file_name": row["file_name"],
+                "pdf_path": row["pdf_path"],
+                "isPassed": bool(row["isPassed"]),
+                "aiFeedback": row["aiFeedback"],
+                "applyDate": row["applyDate"],
+                "applyTime": row["applyTime"],
+            }
+        )
+    return records
 # init_db()  # 已在 app.py 呼叫
 # insert_scoring_result(your_json_dict)
 
@@ -265,8 +306,7 @@ def create_department(unit_no: int, unit_name: str, account: str, password_hash:
             unit_name = excluded.unit_name,
             account = excluded.account,
             password_hash = excluded.password_hash
-        """
-        ,
+        """,
         (unit_no, unit_name.strip(), account.strip().lower(), password_hash),
     )
     conn.commit()

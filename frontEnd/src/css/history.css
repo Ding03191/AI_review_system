@@ -1,0 +1,58 @@
+/* ===== History page ===== */
+.records-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+.summary-item{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fbfcff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.summary-item .k{color:#64748b;font-weight:600;}
+.summary-item .v{font-size:18px;font-weight:700;}
+.records-table-wrap{
+  margin-top:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:auto;
+  background:#fff;
+}
+.records-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+.records-table th,
+.records-table td{
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  vertical-align:top;
+}
+.records-table thead th{
+  background:#f8fafc;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+.records-table tbody tr:hover{background:#f9fbff;}
+.records-table .status-pass{color:#166534;font-weight:600;}
+.records-table .status-fail{color:#991b1b;font-weight:600;}
+.records-table .empty{text-align:center;color:var(--muted);}
+.records-table .feedback{white-space:pre-wrap;}
+.records-table a{color:var(--accent);text-decoration:none;}
+.records-table a:hover{text-decoration:underline;}
+@media (max-width:840px){
+  .records-summary{grid-template-columns:1fr;}
+  .records-table th:nth-child(6),
+  .records-table td:nth-child(6){min-width:240px;}
+  .records-table th:nth-child(7),
+  .records-table td:nth-child(7){min-width:80px;}
+}

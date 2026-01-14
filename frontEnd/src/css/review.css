@@ -148,6 +148,7 @@ body{margin:0;
 .i-tools{background:linear-gradient(135deg,#fde68a,#fef9c3)}
 .i-docs{background:linear-gradient(135deg,#fee2e2,#fecaca)}
 .i-help{background:linear-gradient(135deg,#fef9c3,#fde68a)}
+.i-history{background:linear-gradient(135deg,#e0f2fe,#bae6fd)}
 .i-login{background:linear-gradient(135deg,#f3e8ff,#e9d5ff)}
 .spacer{flex:1 1 auto}
 .scrim{position:fixed;
@@ -596,4 +597,6 @@ input,textarea,select{ padding:10px 12px; }
   background:#fbfcff;
 }
 .export-actions .row .btn{ min-width:120px; }
+
+
 
