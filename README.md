@@ -16,8 +16,8 @@ This is an feedback and scoring system using AI models, based on Double Prompt c
 ### 20250314 Happy Valentine :P
 
 - Added backEnd and frontEnd folder.
-  - backEnd folder: Includes app.py and promptList with prompt.txt.
-  - frontEnd folder: Includes index.html.
+  - backEnd folder: Includes app.py (entrypoint) and promptList.
+  - frontEnd folder: Includes public/index.html.
 - The prompt example is just a demonstration of how to tell AI to give scores and feedback.
 - For app.py the prompts can be modified and added into the system.
   - When changing the contents and the parameters in app.py, rememeber to add the same parameters in index.html.
@@ -31,11 +31,11 @@ This is an feedback and scoring system using AI models, based on Double Prompt c
 - The project have to read PDF.
 - The scoring history should be added into DB (currently using SQLite)
   - Data row: applicantStdn, applicantNo, applicantName, isPassed, aiFeedback, applyDate, applyTime
-- dataAnalyze.py:
+- services/ai_service.py:
   - 處理PDF資料轉換為字串給AI讀，然後回傳json格式
-- dbStoring.py:
+- db/dbStoring.py:
   - 處理獲得的json並儲存到DB內。
-- functions.py:
+- utils/functions.py:
   - 一些基本函式
 - tokenUsed.txt:
   - 紀錄目前的token總消耗
@@ -70,13 +70,13 @@ This is an feedback and scoring system using AI models, based on Double Prompt c
      set OPENAI_API_KEY=your_api_key_here
      python app.py
      ```
-  3. 前端可直接用瀏覽器開啟 `frontEnd\index.html`，或將其透過簡單伺服器提供。
+  3. 前端可直接用瀏覽器開啟 `frontEnd\public\index.html`，或將其透過簡單伺服器提供。
 - **僅開啟前端（快速測試 UI）**：
 
   - 直接在檔案管理器或使用命令：
 
     ```cmd
-    start "" frontEnd\index.html
+    start "" frontEnd\public\index.html
     ```
 
 ## Docker & 環境變數

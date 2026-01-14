@@ -313,7 +313,7 @@
         </div>
          <div>
             <div class="meta-label">原始檔案</div>
-            <button id="openPdfBtn" class="subtle">開啟 PDF</button>
+            <a id="openPdfBtn" class="subtle" href="javascript:void(0)" target="_blank" rel="noopener">開啟 PDF</a>
         </div>
       </div>
 
@@ -596,11 +596,23 @@
       }
 
       if (item.pdf_path) {
-        openPdfBtn.disabled = false;
-        openPdfBtn.onclick = () => window.open(item.pdf_path, "_blank");
+        // 透過 URL 相對目前頁面組出完整連結，避免 file:// 相對路徑判斷錯誤
+        const href = item.pdf_path.match(/^https?:|^file:/i)
+          ? item.pdf_path
+          : new URL(item.pdf_path, window.location.href).toString();
+        openPdfBtn.href = href;
+        openPdfBtn.target = "_blank";
+        openPdfBtn.rel = "noopener";
+        openPdfBtn.classList.remove('disabled');
+        openPdfBtn.title = href;
+        openPdfBtn.textContent = "開啟 PDF";
+        console.log("PDF link:", href);
       } else {
-        openPdfBtn.disabled = true;
-        openPdfBtn.onclick = null;
+        openPdfBtn.href = "javascript:void(0)";
+        openPdfBtn.removeAttribute('target');
+        openPdfBtn.classList.add('disabled');
+        openPdfBtn.title = "此案件沒有可用的 PDF 檔";
+        openPdfBtn.textContent = "開啟 PDF";
       }
 
       // radio 按鈕狀態

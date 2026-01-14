@@ -4,6 +4,8 @@ import os
 
 DB_PATH = "scoringHistory.sqlite"       # 你的 SQLite 檔名
 JSON_FILE = "labeled_result.json"       # 第三方回傳的 JSON 檔名
+
+
 def _resolve_db_path():
     base_dir = os.path.dirname(__file__)
     legacy = os.path.join(base_dir, "scoringHistory.sqlite")

@@ -3,7 +3,8 @@ FROM python:3.11-slim
 # 環境變數設定
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    TESSERACT_CMD=/usr/bin/tesseract
+    TESSERACT_CMD=/usr/bin/tesseract \
+    PYTHONPATH=/app/src
 
 # Install system packages required for OCR and PDF processing
 RUN apt-get update && apt-get install -y --no-install-recommends \

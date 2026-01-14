@@ -6,9 +6,13 @@ import openai
 import pytesseract
 from PIL import Image, ImageEnhance, ImageOps  # 未來支援圖片上傳
 # custom modules
-import functions as func
-# RAG
-from rag_utils import split_text_into_chunks, create_vectorstore, retrieve_relevant_chunks, load_persistent_vectorstore
+from ..utils import functions as func
+from ..utils.rag_utils import (
+    create_vectorstore,
+    load_persistent_vectorstore,
+    retrieve_relevant_chunks,
+    split_text_into_chunks,
+)
 
 # 設定 Tesseract 執行檔位置（Windows）
 # 先看有沒有環境變數，沒有就用 C:\Tesseract-OCR\tesseract.exe
@@ -94,10 +98,9 @@ def extract_file_content(file_path, ocr_dpi=400):
         return f" Error processing file: {e}"
 
 
-# system_instructions = func.read_file_to_string(r'PromptRefine\backEnd\promptList\applicationInstruciton.txt')
-system_instructions = func.read_file_to_string(
-    os.path.join(os.path.dirname(__file__), 'promptList', 'applicationInstruciton.txt')
-)
+_BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+_PROMPT_PATH = os.path.join(_BACKEND_DIR, "promptList", "applicationInstruciton.txt")
+system_instructions = func.read_file_to_string(_PROMPT_PATH)
 
 
 # with files
@@ -172,7 +175,9 @@ def analyze_with_gpt_rag_mix(file_content, instruction):
         instant_chunks = retrieve_relevant_chunks(instant_vectorstore, instruction, k=3)
 
         # 🔹2. 常駐知識庫處理
-        persistent_vectorstore = load_persistent_vectorstore("vectorstores/knowledge_base")
+        persistent_vectorstore = load_persistent_vectorstore(
+            os.path.join(_BACKEND_DIR, "vectorstores", "knowledge_base")
+        )
         persistent_chunks = retrieve_relevant_chunks(persistent_vectorstore, instruction, k=3)
 
         # 🔹3. 合併所有 chunks

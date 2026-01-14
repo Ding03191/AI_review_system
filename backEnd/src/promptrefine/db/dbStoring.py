@@ -5,11 +5,13 @@ import shutil
 
 
 _BASE_DIR = os.path.dirname(__file__)
-_LEGACY_DB_PATH = os.path.join(_BASE_DIR, "scoringHistory.sqlite")
-_DEFAULT_DB_PATH = os.path.join(_BASE_DIR, "db", "scoringHistory.sqlite")
+_BACKEND_DIR = os.path.abspath(os.path.join(_BASE_DIR, "..", "..", ".."))
+_LEGACY_DB_PATH = os.path.join(_BACKEND_DIR, "scoringHistory.sqlite")
+_DEFAULT_DB_PATH = os.path.join(_BACKEND_DIR, "db", "scoringHistory.sqlite")
 DB_NAME = os.environ.get("DB_PATH", _DEFAULT_DB_PATH)
 TABLE_NAME = 'history'
 LABEL_TABLE_NAME = "history_labels"
+DEPT_TABLE_NAME = "departments"
 
 
 def _ensure_db_path():
@@ -53,9 +55,9 @@ def init_db():
             applicantStdn TEXT NOT NULL,
             applicantNo INTEGER NOT NULL,
 
-            labelIsCorrect INTEGER NOT NULL,     -- 1 = AI 整體正確, 0 = 有錯
-            correctedIsPassed BOOLEAN,           -- 若有修正後的 isPassed
-            correctedFeedback TEXT,              -- 若有修正後的 aiFeedback
+            labelIsCorrect INTEGER NOT NULL,     -- 1 = AI 判斷正確, 0 = 判錯
+            correctedIsPassed BOOLEAN,           -- 人工修正後的 isPassed
+            correctedFeedback TEXT,              -- 人工修正後的 aiFeedback
 
             reviewer TEXT,                       -- 標記人，例如 teacherA
             reviewComment TEXT,                  -- 備註
@@ -63,6 +65,17 @@ def init_db():
 
             FOREIGN KEY (applicantStdn, applicantNo)
                 REFERENCES {TABLE_NAME}(applicantStdn, applicantNo)
+        )
+    ''')
+
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS {DEPT_TABLE_NAME} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            unit_no INTEGER UNIQUE NOT NULL,
+            unit_name TEXT NOT NULL,
+            account TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
@@ -84,7 +97,7 @@ def insert_scoring_result(data):
     c = conn.cursor()
 
     c.execute(f'''
-        INSERT OR REPLACE INTO {TABLE_NAME} (
+        INSERT INTO {TABLE_NAME} (
             applicantStdn,
             applicantNo,
             applicantName,
@@ -95,6 +108,14 @@ def insert_scoring_result(data):
             applyDate,
             applyTime
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(applicantStdn, applicantNo) DO UPDATE SET
+            applicantName = excluded.applicantName,
+            file_name     = excluded.file_name,
+            pdf_path      = excluded.pdf_path,
+            isPassed      = excluded.isPassed,
+            aiFeedback    = excluded.aiFeedback,
+            applyDate     = excluded.applyDate,
+            applyTime     = excluded.applyTime
     ''', (
         data['applicantStdn'],
         data['applicantNo'],
@@ -121,11 +142,11 @@ def fetch_all_results():
     conn.close()
     return results
 
-# init_db()  # 已經call過了
+# init_db()  # 已在 app.py 呼叫
 # insert_scoring_result(your_json_dict)
 
 
-# 4. 取得一筆「尚未被標記」的 history 記錄
+# 4. 取回一筆「尚未被標記」的 history 記錄
 def get_next_unlabeled_history():
     conn = _connect()
     conn.row_factory = sqlite3.Row
@@ -145,7 +166,7 @@ def get_next_unlabeled_history():
         LEFT JOIN {LABEL_TABLE_NAME} AS l
           ON h.applicantStdn = l.applicantStdn
          AND h.applicantNo  = l.applicantNo
-        WHERE l.id IS NULL          -- 還沒有標記過的
+        WHERE l.id IS NULL          -- 尚未有標記資料
         ORDER BY h.applyDate, h.applyTime
         LIMIT 1
     ''')
@@ -173,13 +194,13 @@ def get_next_unlabeled_history():
 # 5. 寫入一筆人工標記結果
 def insert_label_result(label_data: dict):
     """
-    label_data 格式示意：
+    label_data 格式示例：
     {
         "applicantStdn": "A123456789",
         "applicantNo": 1,
         "labelIsCorrect": True,
-        "correctedIsPassed": True 或 False 或 None,
-        "correctedFeedback": "修正後意見或 None",
+        "correctedIsPassed": True or False or None,
+        "correctedFeedback": "修正後意見 or None",
         "reviewer": "teacherA",
         "reviewComment": "哪裡錯、為什麼錯"
     }
@@ -211,7 +232,7 @@ def insert_label_result(label_data: dict):
     conn.close()
 
 
-# === Users Table（登入用） ===
+# === Users Table（登入用）===
 def init_users_table():
     conn = _connect()
     c = conn.cursor()
@@ -233,6 +254,37 @@ def get_conn():
     return _connect()
 
 
+def create_department(unit_no: int, unit_name: str, account: str, password_hash: str):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute(
+        f"""
+        INSERT INTO {DEPT_TABLE_NAME} (unit_no, unit_name, account, password_hash)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(unit_no) DO UPDATE SET
+            unit_name = excluded.unit_name,
+            account = excluded.account,
+            password_hash = excluded.password_hash
+        """
+        ,
+        (unit_no, unit_name.strip(), account.strip().lower(), password_hash),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_department_by_account(account: str):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute(
+        f"SELECT id, unit_no, unit_name, account, password_hash, created_at FROM {DEPT_TABLE_NAME} WHERE account=?",
+        (account.strip().lower(),),
+    )
+    row = c.fetchone()
+    conn.close()
+    return row
+
+
 def create_user(email, name, password_hash, role='applicant'):
     conn = get_conn()
     c = conn.cursor()
@@ -251,4 +303,3 @@ def get_user_by_email(email):
     row = c.fetchone()
     conn.close()
     return row
-

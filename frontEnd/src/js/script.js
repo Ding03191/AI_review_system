@@ -36,11 +36,13 @@ if (drawer && scrim && btnOpenDrawer && btnCloseDrawer) {
 
   /***** Router *****/
   const pages = {
-    teacher: document.getElementById('page-teacher'),
     reward: document.getElementById('page-reward'),
     docs: document.getElementById('page-docs'),
     help: document.getElementById('page-help'),
+    teacher: document.getElementById('page-teacher'),
+    'teacher-in': document.getElementById('page-teacher-in'),
     login: document.getElementById('page-login'),
+    register: document.getElementById('page-register'),
   };
   const navLinks = Array.from(document.querySelectorAll('.drawer .nav-item'));
   function setActivePage(name) {
@@ -49,18 +51,11 @@ if (drawer && scrim && btnOpenDrawer && btnCloseDrawer) {
     });
     navLinks.forEach(a => a.classList.toggle('is-active', a.dataset.page === name));
     const hero = document.querySelector('.hero');
-    if (hero) hero.style.display = (name === 'teacher' || name === 'reward') ? 'flex' : 'none';
+    if (hero) hero.style.display = (name === 'reward') ? 'flex' : 'none';
   }
-  navLinks.forEach(a => a.classList.toggle('is-active', a.dataset.page === name));
-  document.querySelector('.hero').style.display = (name === 'teacher' || name === 'reward') ? 'flex' : 'none';
-
   function initRoute() {
-    const name = (location.hash || '#teacher').replace('#', '');
-    if (name === 'login') {                                  // ← 新增：導到獨立登入頁
-      location.href = 'login.html';
-      return;
-    }
-    setActivePage(pages[name] ? name : 'teacher');
+    const name = (location.hash || '#reward').replace('#', '');
+    setActivePage(pages[name] ? name : 'reward');
   }
   window.addEventListener('hashchange', () => { initRoute(); closeDrawer(); });
   document.querySelectorAll('[data-page]').forEach(el => { el.addEventListener('click', () => { }); });
@@ -359,7 +354,7 @@ document.getElementById('formLogin')?.addEventListener('submit', async (e)=>{
     const user = await apiLogin(email, password);
     localStorage.setItem('user', JSON.stringify(user));
     updateLoginUI(user);
-    location.hash = '#teacher';
+    location.hash = '#reward';
   }catch(err){
     $err.textContent = err.message || '登入失敗';
   }finally{
@@ -490,7 +485,13 @@ function renderAIResponse(targetId, payload){
   // summary
   if(feedback){
     const sum = document.createElement('div'); sum.className='fbx-summary';
-    sum.textContent = feedback;
+    // 支援列點／分組的換行與符號
+    sum.innerHTML = feedback
+      .replace(/\n/g, '<br>')
+      .replace(/(?:^|\n)[•*]\s?/g, '<br>• ')
+      .replace(/(?:^|\n)\d+\)\s?/g, '<br>$&')
+      .replace(/(?:^|\n)-(?!\s)/g, '<br>• ')
+      .replace(/(?:^|\n)\s+/g, '<br>');
     root.appendChild(sum);
   }
 
@@ -719,46 +720,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  const page = document.body.dataset.page;
+  try { updateLoginUI(await apiMe()); } catch {}
 
-  if (page === 'login') {
-    // 顯示登入狀態
-    try { updateLoginUI(await apiMe()); } catch {}
-    const form = document.getElementById('formLogin');
+  const loginForm = document.getElementById('formLogin');
+  if (loginForm) {
     const err  = document.getElementById('loginError');
-    form?.addEventListener('submit', async (e)=>{
+    loginForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const fd   = new FormData(form);
+      const fd   = new FormData(loginForm);
       const email= fd.get('account');
       const pwd  = fd.get('password');
-      const btn  = form.querySelector('button[type="submit"]');
+      const btn  = loginForm.querySelector('button[type="submit"]');
       err.textContent=''; btn.disabled=true; btn.dataset.loading='true';
       try{
         const user = await apiLogin(email, pwd);
-        // 登入成功 → 回你的主頁
-        location.href = 'index.html#teacher';
-      }catch(ex){ err.textContent = ex.message || '登入失敗'; }
+        location.hash = '#reward';
+      }catch(ex){ err.textContent = ex.message || '????'; }
       finally{ btn.disabled=false; btn.dataset.loading=''; }
     });
+  }
 
-  } else if (page === 'register') {
-    const form = document.getElementById('formRegister');
+  const registerForm = document.getElementById('formRegister');
+  if (registerForm) {
     const err  = document.getElementById('registerError');
-    form?.addEventListener('submit', async (e)=>{
+    registerForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const fd = new FormData(form);
+      const fd = new FormData(registerForm);
       const name = fd.get('name')?.toString().trim();
       const email= fd.get('email')?.toString().trim();
       const pwd  = fd.get('password')?.toString();
-      const btn  = form.querySelector('button[type="submit"]');
+      const btn  = registerForm.querySelector('button[type="submit"]');
       err.textContent=''; btn.disabled=true; btn.dataset.loading='true';
       try{
-        if (!/.+@.+\..+/.test(email)) throw new Error('Email 格式不正確');
-        if ((pwd||'').length<6)       throw new Error('密碼至少 6 碼');
+        if (!/.+@.+\..+/.test(email)) throw new Error('Email ?????');
+        if ((pwd||'').length<6)       throw new Error('???? 6 ?');
         await apiRegister(name, email, pwd);
-        // 註冊成功 → 返回登入
-        location.href = 'login.html?signup=1';
-      }catch(ex){ err.textContent = ex.message || '註冊失敗'; }
+        location.hash = '#login';
+      }catch(ex){ err.textContent = ex.message || '????'; }
       finally{ btn.disabled=false; btn.dataset.loading=''; }
     });
   }
@@ -803,4 +801,3 @@ document.getElementById('btnExportDocx')?.addEventListener('click', async ()=>{
                            `教師時數申請_${data.teacherName||'未命名'}.docx`);
   }catch(e){ alert(e.message); }
 });
-

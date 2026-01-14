@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- 可透過此 meta 設定後端 API 根路徑，方便在不同環境切換 -->
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>審核系統｜獎勵審核</title>
+  <link rel="stylesheet" href="../src/css/review.css">
+  <link rel="stylesheet" href="../src/css/teacher.css">
+  <link rel="stylesheet" href="../src/css/teacher_in.css">
+</head>
+<body>
+
+  <header class="appbar" role="banner">
+    <button id="btnOpenDrawer" class="icon-btn" aria-label="開啟主選單" aria-controls="drawer" aria-expanded="false">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true">
+      </span>
+      <h1>審核系統</h1>
+    </div>
+    <div class="appbar-actions">
+      <button id="btnTheme" class="chip" aria-label="切換主題">外觀</button>
+    </div>
+  </header>
+
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div class="avatar">AI</div>
+      <div class="who">
+        <strong>智慧審核平台</strong>
+        <span>LLM + RAG</span>
+      </div>
+      <button id="btnCloseDrawer" class="icon-btn" aria-label="關閉主選單">
+        <span class="bar close"></span><span class="bar close"></span>
+      </button>
+    </div>
+
+    <nav class="drawer-nav">
+      <!-- 審核作業：只保留獎勵審核 -->
+      <button class="nav-accordion flat" data-acc="review">
+        <span class="i i-folder"></span> 審核作業 <span class="caret"></span>
+      </button>
+      <div class="nav-panel open" data-panel="review">
+        <a href="#reward" data-page="reward" class="nav-item is-active">
+          <span class="i i-reward"></span> 獎勵審核
+        </a>
+      </div>
+
+      <!-- 工具區維持原本 -->
+      <button class="nav-accordion flat" data-acc="tools">
+        <span class="i i-tools"></span> 工具 <span class="caret"></span>
+      </button>
+      <div class="nav-panel open" data-panel="tools">
+        <a href="#docs" data-page="docs" class="nav-item">
+          <span class="i i-docs"></span> 使用說明
+        </a>
+        <a href="#help" data-page="help" class="nav-item">
+          <span class="i i-help"></span> 常見問題
+        </a>
+      </div>
+
+       <button class="nav-accordion flat" data-acc="platforms">
+        <span class="i i-teacher"></span> 其他系統 <span class="caret"></span>
+      </button>
+      <div class="nav-panel open" data-panel="platforms">
+        <a href="#teacher" data-page="teacher" class="nav-item">
+          <span class="i i-teacher"></span> 教師成長時數平台
+        </a>
+        <a href="#teacher-in" data-page="teacher-in" class="nav-item">
+          <span class="i i-teacher"></span> 教師成長活動時數
+        </a>
+      </div>
+
+      <div class="spacer"></div>
+      <a href="#login" data-page="login" class="nav-item login">
+        <span class="i i-login"></span> 登入
+      </a>
+    </nav>
+  </aside>
+
+  <div id="scrim" class="scrim" hidden></div>
+
+  <main class="container" role="main">
+
+    <section class="hero">
+      <div class="hero-text">
+        <h2>讓審核更快、更準確</h2>
+        <p class="muted">上傳磨課師證明文件，由 AI 協助檢查名稱、時數、測驗成績與永續目標等資訊。</p>
+      </div>
+      <div class="hero-cta">
+        <!-- 這裡改成直接開啟「獎勵審核」頁面 -->
+        <a class="btn primary" href="#reward" data-page="reward">開始使用</a>
+        <a class="btn" href="#docs" data-page="docs">查看說明</a>
+      </div>
+    </section>
+
+    <!-- 獎勵審核（左表單／右回饋滿版） -->
+    <section id="page-reward" class="page is-hidden">
+      <div class="section-hd">
+        <h3>磨課師學習獎勵審核</h3>
+        <p class="muted">上傳 PDF，AI 依規則檢核：名稱一致、時間、總時數、測驗成績、身分、姓名、主題、去重。</p>
+      </div>
+
+      <div class="layout-2col">
+        <article class="card">
+          <div class="card-hd">申請資料與上傳</div>
+          <div class="card-bd">
+            <form id="uploadForm" class="form">
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lbl req">案件編號</span>
+                  <input name="caseNo" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學生姓名</span>
+                  <input name="name" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學號</span>
+                  <input name="studentId" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學習項目</span>
+                  <input name="project" required>
+                </label>
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">特色或產業趨勢</span>
+                  <input name="feature" required>
+                </label>
+
+                <!-- 永續目標（可多選，單欄） -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">永續目標（可多選）</span>
+                  <div id="sdgMulti" class="ms-host" style="margin-bottom:8px;"></div>
+                  <input type="hidden" id="sdg_values" name="sdg_values" value="">
+                  <div id="sdgChosen" class="tags" style="margin-top:6px;"></div>
+                </label>
+
+                <!-- 課程名稱（可多筆，支援新增/刪除） -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">課程名稱</span>
+                  <div id="courseList" class="course-list">
+                    <div class="course-row">
+                      <input type="text" name="courses" placeholder="輸入課程名稱">
+                      <button type="button" class="icon-btn sm course-remove" aria-label="移除課程">－</button>
+                    </div>
+                  </div>
+                  <div class="actions" style="justify-content:flex-start;gap:8px;margin-top:8px;">
+                    <button type="button" class="btn ghost" id="addCourseBtn">＋ 新增課程</button>
+                  </div>
+                </label>
+
+                <label class="field">
+                  <span class="lbl req">總時數</span>
+                  <input name="totalHours" required>
+                </label>
+
+                <!-- 主題：下拉式多選 -->
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl">請選擇課程主題（可多選）</span>
+                  <div id="topicMulti" class="multiselect" data-name="topics"></div>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">上傳 PDF 檔案</span>
+                  <input type="file" name="file" accept="application/pdf" required>
+                </label>
+              </div>
+
+              <div class="actions">
+                <button class="btn primary" type="submit">送出審核</button>
+              </div>
+            </form>
+          </div>
+        </article>
+
+        <article class="card side-fill">
+          <div class="card-hd">AI 審核回饋</div>
+          <div class="card-bd">
+            <div id="feedbackWindow" class="kbd fillbox">送出後將顯示回饋</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 使用說明 -->
+    <section id="page-docs" class="page is-hidden">
+      <div class="section-hd"><h3>使用說明</h3></div>
+      <article class="card">
+        <div class="card-bd">
+          <ol class="steps">
+            <li>在「審核作業」選擇「獎勵審核」。</li>
+            <li>填寫案件編號、學生資料與課程資訊。</li>
+            <li>上傳磨課師相關 PDF 檔案。</li>
+            <li>送出後等待 AI 完成審核。</li>
+            <li>在右側「AI 審核回饋」查看結果並人工覆核。</li>
+          </ol>
+        </div>
+      </article>
+    </section>
+
+    <!-- 常見問題 -->
+    <section id="page-help" class="page is-hidden">
+      <div class="section-hd"><h3>常見問題</h3></div>
+      <article class="card">
+        <div class="card-bd faq">
+          <details>
+            <summary>Failed to fetch？</summary>
+            <p>通常為後端未啟動、CORS 設定、或端點網址錯誤所造成，請確認 Flask 服務是否啟動，以及前端 API_BASE 設定是否一致。</p>
+          </details>
+        </div>
+      </article>
+    </section>
+
+    <!-- 教師成長時數平台 -->
+    <section id="page-teacher" class="page is-hidden">
+      <section class="hero">
+        <div class="hero-text">
+          <h2>國立勤益科技大學 教師成長時數認證表申請</h2>
+          <p class="muted">由教師填寫成長時數申請表，並彙整正式證明文件送交學院審核。</p>
+        </div>
+        <div class="hero-cta">
+          <a class="btn primary" href="#teacher-form">開始填寫</a>
+        </div>
+      </section>
+
+      <!-- ===== Word 格式專用 PDF 表單 ===== -->
+      <div id="pdfForm" style="font-family: 'Noto Sans TC', sans-serif;">
+        <h2 style="text-align:center; margin:0;">國立勤益科技大學教師成長時數認證表（校外活動）</h2>
+        <p>一、由教師本人填寫申請，於實體活動後填具申請表送至教務處教學資源中心。</p>
+        <p>二、檢附相關證明文件，例如：證書影本、時數證明或學習平台截圖。</p>
+        <p>三、教師可透過教師成長時數認證平台查詢個人時數：https://growup.ncut.edu.tw/</p>
+
+        <table border="1" cellspacing="0" cellpadding="6" width="100%" style="border-collapse:collapse;">
+          <tr>
+          <td class="label">教師姓名</td>
+          <td id="pdf_teacherName"></td>
+
+          <td class="label">任教單位</td>
+          <td id="pdf_department"></td>
+        </tr>
+
+        <tr>
+          <td class="label">教師編號</td>
+          <td id="pdf_teacherId"></td>
+
+          <td class="label">聯絡分機</td>
+          <td id="pdf_ext"></td>
+        </tr>
+
+          <tr>
+            <td class="label">活動日期</td>
+            <td colspan="3">
+              <span id="pdf_eventDate"></span>
+              <span id="pdf_start"></span> ～<span id="pdf_end"></span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>活動課程名稱</td>
+            <td class="label" id="pdf_courseTitle"></td>
+          </tr>
+
+          <tr>
+            <td>主辦單位</td>
+            <td class="label" id="pdf_organizer"></td>
+          </tr>
+
+          <tr>
+            <td>請具體說明對教師專業成長之助益</td>
+            <td class="label" id="pdf_relevance" style="height:120px;"></td>
+          </tr>
+
+          <tr>
+            <td>附件</td>
+            <td class="label">
+              <div id="pdf_files"></div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>是否核發證書</td>
+            <td class="label">
+              <span id="pdf_hasCert"></span>
+              <span id="pdf_certNo"></span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>申請人簽章</td>
+            <td style="height:60px;"></td>
+
+            <td>單位主管簽章</td>
+            <td style="height:60px;"></td>
+          </tr>
+
+          <tr>
+            <td>認證時數（由教學資源組填寫）</td>
+            <td></td>
+
+            <td>填寫人員（教學資源中心）</td>
+            <td></td>
+          </tr>
+        </table>
+
+        <p style="text-align:right; margin-top:6px;">製表日期：14.06.20</p>
+      </div>
+
+      <section id="teacher-form">
+        <div id="printAreaTeacher">
+        <div class="section-hd">
+          <h3>教師成長時數－申請表</h3>
+          <p class="muted">請填寫各欄位，並附上證明文件，完成後可輸出 PDF 或 Word 檔。</p>
+        </div>
+
+        <article class="card">
+          <div class="card-hd">申請資料</div>
+          <div class="card-bd">
+            <form id="formTeacher" class="form" novalidate>
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lbl req">教師姓名</span>
+                  <input name="teacherName" required placeholder="王小明">
+                </label>
+                <label class="field">
+                  <span class="lbl req">任教單位</span>
+                  <input name="department" required placeholder="資訊工程系">
+                </label>
+                <label class="field">
+                  <span class="lbl req">教師編號</span>
+                  <input name="teacherId" required placeholder="T12345">
+                </label>
+                <label class="field">
+                  <span class="lbl">聯絡分機</span>
+                  <input name="ext" placeholder="1234">
+                </label>
+              </div>
+
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lbl req">活動日期</span>
+                  <input name="eventDate" type="date" required>
+                </label>
+
+                <div class="field">
+                  <span class="lbl req">活動起訖時間</span>
+                  <div class="row row-time">
+                    <input name="startTime" type="time" required>
+                    <span class="muted">～</span>
+                    <input name="endTime" type="time" required>
+                  </div>
+                </div>
+
+                <label class="field">
+                  <span class="lbl req">活動名稱</span>
+                  <input name="courseTitle" required placeholder="生成式 AI 教學應用">
+                </label>
+                <label class="field">
+                  <span class="lbl req">主辦單位</span>
+                  <input name="organizer" required placeholder="國立勤益科技大學 教育學院">
+                </label>
+              </div>
+
+              <label class="field">
+                <span class="lbl req">教師專業成長</span>
+                <textarea name="relevance" required placeholder="說明本次課程如何提升教學、課程設計與研究能力"></textarea>
+              </label>
+
+              <div class="grid g-2">
+                <div class="field">
+                  <span class="lbl req">是否核發證書</span>
+                  <div class="row">
+                    <label class="choice">
+                      <input type="radio" name="hasCert" value="yes" required> 是
+                    </label>
+                    <label class="choice">
+                      <input type="radio" name="hasCert" value="no"> 否
+                    </label>
+                  </div>
+                </div>
+                <label id="certNoBox" class="field is-hidden">
+                  <span class="lbl">證書字號</span>
+                  <input name="certNo" placeholder="A-2025-000123">
+                </label>
+              </div>
+
+              <div class="field">
+                <span class="lbl req">上傳等證明文件（可多檔）</span>
+                <div class="uploader">
+                  <input id="files" type="file" multiple
+                         accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx" required>
+                  <p class="muted">請至少上傳 1 份：證書影本、時數證明或學習平台截圖。</p>
+                  <ul id="fileList" class="file-list"></ul>
+
+                  <div class="export-actions">
+                    <div class="muted">⬇ 可輸出申請資料</div>
+                    <div class="row wrap">
+                      <button type="button" id="btnExportPDF"  class="btn">輸出 PDF</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <details class="note">
+                <summary>輸出前預覽（JSON）</summary>
+                <pre id="preview" class="preview"></pre>
+              </details>
+
+              <div id="msg" class="msg"></div>
+              <div class="actions">
+                <button type="reset" class="btn">清除</button>
+                <button type="submit" class="btn primary">前端檢查</button>
+              </div>
+            </form>
+          </div>
+        </article>
+
+        <div class="important-tip">
+          <strong>最後步驟提醒</strong>
+          <span>表單填寫完畢後，請匯出 PDF，並列印紙本後送出，方便核章申請。</span>
+        </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- 教師校內活動 -->
+    <section id="page-teacher-in" class="page is-hidden">
+      <section class="hero">
+        <div class="hero-text">
+          <h2>校內活動一站式申請</h2>
+          <p class="muted">由主辦單位線上填寫「教師參與活動時數認證申請表（校內活動）」。</p>
+        </div>
+        <div class="hero-cta">
+          <a class="btn primary" href="#teacher-in-form">開始填寫</a>
+        </div>
+      </section>
+
+      <section id="teacher-in-form">
+        <div id="printAreaIn">
+          <div class="section-hd">
+            <h3>國立勤益科技大學教師成長活動時數認證申請表（校內活動）</h3>
+            <p class="muted">
+              依表單說明，活動結束後請提供簽到單影本予教學資源中心。
+            </p>
+          </div>
+
+          <article class="card">
+            <div class="card-hd">基本活動資訊</div>
+            <div class="card-bd">
+              <form id="formInCampus" class="form" novalidate>
+                <div class="grid g-2">
+                  <label class="field">
+                    <span class="lbl req">主辦單位</span>
+                    <input name="organizerDept" required placeholder="教學組 教學資源中心">
+                  </label>
+                  <label class="field">
+                    <span class="lbl req">活動名稱</span>
+                    <input name="eventName" required placeholder="生成式 AI 教學應用工作坊">
+                  </label>
+
+                  <label class="field">
+                    <span class="lbl req">承辦人</span>
+                    <input name="hostName" required placeholder="負責老師或承辦人姓名">
+                  </label>
+                  <label class="field">
+                    <span class="lbl req">聯絡電話（校內分機）</span>
+                    <input name="ext" required placeholder="請填校內分機，例如 1234">
+                  </label>
+
+                  <label class="field">
+                    <span class="lbl req">活動地點</span>
+                    <input name="location" required placeholder="校內教室 / 會議室（如需詳述地點）">
+                  </label>
+
+                  <div class="field">
+                    <span class="lbl req">活動日期與時間</span>
+                    <div class="row row-time">
+                      <input name="eventDate" type="date" required>
+                      <span class="muted">日期</span>
+                      <input name="startTime" type="time" required>
+                      <span class="muted">～</span>
+                      <input name="endTime" type="time" required>
+                    </div>
+                    <p class="muted">例：14/01/01  14:00～16:00</p>
+                  </div>
+
+                  <div class="field">
+                    <span class="lbl req">是否核發研習證書</span>
+                    <div class="row">
+                      <label class="choice">
+                        <input type="radio" name="hasCert" value="yes" required> 是
+                      </label>
+                      <label class="choice">
+                        <input type="radio" name="hasCert" value="no"> 否
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </article>
+
+          <article class="card" style="margin-top:16px;">
+            <div class="card-hd">領域別 & SDGs 對應</div>
+            <div class="card-bd">
+              <div class="grid g-2">
+
+                <div class="field">
+                  <span class="lbl req">領域別（可複選）</span>
+                  <select name="domain" id="domainSelect" multiple required>
+                    <option value="機械">機械</option>
+                    <option value="智慧製造">智慧製造</option>
+                    <option value="智慧化">智慧化</option>
+                    <option value="資安">資安</option>
+                    <option value="資通訊">資通訊</option>
+                    <option value="綠能">綠能</option>
+                    <option value="學術">學術</option>
+                    <option value="智慧財產">智慧財產</option>
+                    <option value="終身學習">終身學習</option>
+                    <option value="品德教育">品德教育</option>
+                    <option value="性別平等">性別平等</option>
+                  </select>
+
+                  <p class="muted">按住 Ctrl（Windows）或 Cmd（Mac）可多選</p>
+
+                  <div class="field" style="margin-top:10px;">
+                    <span class="lbl">其他領域別</span>
+                    <input name="domainOther" placeholder="如屬其他領域別，請簡要說明">
+                  </div>
+                </div>
+
+                <div class="field">
+                  <span class="lbl req">對接 SDGs 項目（可複選）</span>
+                  <select name="sdg" id="sdgSelect" multiple required>
+                    <option value="SDG1">SDG1 終結貧窮</option>
+                    <option value="SDG2">SDG2 消除飢餓</option>
+                    <option value="SDG3">SDG3 健康與福祉</option>
+                    <option value="SDG4">SDG4 優質教育</option>
+                    <option value="SDG5">SDG5 性別平等</option>
+                    <option value="SDG6">SDG6 淨水與衛生</option>
+                    <option value="SDG7">SDG7 潔淨能源</option>
+                    <option value="SDG8">SDG8 合適的工作與經濟成長</option>
+                    <option value="SDG9">SDG9 工業與創新基礎建設</option>
+                    <option value="SDG10">SDG10 減少不平等</option>
+                    <option value="SDG11">SDG11 永續城市</option>
+                    <option value="SDG12">SDG12 責任消費與生產</option>
+                    <option value="SDG13">SDG13 氣候行動</option>
+                    <option value="SDG14">SDG14 保育海洋生態</option>
+                    <option value="SDG15">SDG15 保育陸域生態</option>
+                    <option value="SDG16">SDG16 和平、正義與健全制度</option>
+                    <option value="SDG17">SDG17 夥伴關係</option>
+                  </select>
+
+                  <p class="muted">可複選多項永續發展目標</p>
+                </div>
+
+              </div>
+            </div>
+          </article>
+
+          <article class="card" style="margin-top:16px;">
+            <div class="card-hd">活動說明</div>
+            <div class="card-bd">
+              <div class="grid">
+                <label class="field">
+                  <span class="lbl req">一、活動主題</span>
+                  <textarea name="purpose" required placeholder="請說明本活動的主要目的與預期成果"></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="lbl req">二、詳細活動內容</span>
+                  <textarea name="content" required placeholder="請包含活動辦理方式、主講人、活動流程等"></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="lbl">三、活動與教師教學專業之關聯（教學專業）</span>
+                  <textarea name="teachingRelation" placeholder="例：強化課程設計、教學素養等"></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="lbl">四、活動與教師研究專業之關聯（研究專業）</span>
+                  <textarea name="researchRelation" placeholder="例：研究方法、研究議題等"></textarea>
+                </label>
+
+                <p class="muted">註：一、二項為活動要點，至少需填寫。</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" print-only style="margin-top:16px;">
+            <div class="card-hd">簽章欄位（列印後簽署）</div>
+            <div class="card-bd">
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lbl">申請人／主辦人</span>
+                  <input name="applicant" placeholder="列印後於此簽名">
+                </label>
+                <label class="field">
+                  <span class="lbl">申請單位主管</span>
+                  <input name="deptHead" placeholder="列印後於此簽名">
+                </label>
+                <label class="field">
+                  <span class="lbl">填寫人員</span>
+                  <input name="staff" placeholder="由教學資源中心填寫">
+                </label>
+                <label class="field">
+                  <span class="lbl">教學資源中心主任</span>
+                  <input name="lead" placeholder="由教學資源中心填寫">
+                </label>
+              </div>
+
+              <div class="grid" style="margin-top:12px;">
+                <label class="field">
+                  <span class="lbl">其他備註</span>
+                  <textarea name="note" placeholder="例：特殊說明、補件事項"></textarea>
+                </label>
+              </div>
+            </div>
+          </article>
+
+          <div class="important-tip">
+            <strong>最後步驟提醒</strong>
+            <span>
+              活動結束後請將表單匯出並列印，簽署後連同簽到影本送交教學資源中心。
+            </span>
+          </div>
+
+          <details class="note" style="margin-top:16px;">
+            <summary>輸出前預覽（JSON）</summary>
+            <pre id="previewIn" class="preview"></pre>
+          </details>
+
+          <div id="msgIn" class="msg"></div>
+          <div class="actions">
+            <button type="reset" class="btn" form="formInCampus">清除</button>
+            <button type="button" class="btn primary" id="btnCheckIn">前端檢查</button>
+          </div>
+
+        </div>
+      </section>
+    </section>
+
+    <!-- 登入 -->
+    <section id="page-login" class="page is-hidden fade-in">
+      <div class="auth-card slide-up">
+        <div class="auth-head">
+          <div class="badge"></div>
+          <div><div class="title">審核系統</div><div id="loginBadge" class="muted">未登入</div></div>
+        </div>
+        <div class="auth-body">
+          <form id="formLogin" autocomplete="off">
+            <div class="field floating">
+              <input type="email" name="account" placeholder=" " required>
+              <label>Email 帳號</label>
+            </div>
+            <div class="field floating with-addon">
+              <input id="loginPwd" type="password" name="password" placeholder=" " minlength="6" required>
+              <label>密碼</label>
+              <button type="button" class="icon-btn" data-toggle="#loginPwd" aria-label="顯示/隱藏密碼">👁</button>
+            </div>
+            <div class="row between">
+              <label class="checkbox"><input type="checkbox" id="rememberMe"> 記住我</label>
+              <a class="muted small" href="#register">沒有帳號？註冊</a>
+            </div>
+            <div id="loginError" class="auth-error"></div>
+            <div class="login-actions"><button type="submit" class="btn primary">登入</button></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- 註冊 -->
+    <section id="page-register" class="page is-hidden fade-in">
+      <div class="auth-card slide-up">
+        <div class="auth-head">
+          <div class="badge"></div>
+          <div><div class="title">建立帳號</div><div class="muted">請輸入資料申請審核</div></div>
+        </div>
+        <div class="auth-body">
+          <form id="formRegister" autocomplete="off">
+            <div class="field floating"><input type="text" name="name" placeholder=" " required><label>姓名</label></div>
+            <div class="field floating"><input type="email" name="email" placeholder=" " required><label>Email</label></div>
+            <div class="field floating with-addon">
+              <input id="regPwd" type="password" name="password" placeholder=" " minlength="6" required>
+              <label>密碼（至少 6 碼）</label>
+              <button type="button" class="icon-btn" data-toggle="#regPwd" aria-label="顯示/隱藏密碼">👁</button>
+            </div>
+            <div id="registerError" class="auth-error"></div>
+            <div class="login-actions">
+              <button type="submit" class="btn primary">建立帳號</button>
+              <a class="btn ghost" href="#login">返回登入</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../src/js/script.js" defer></script>
+</body>
+</html>

@@ -65,12 +65,36 @@ def export_data_json():
         # 之後你知道檔名規則，我們再把這裡改掉就好
         file_name = (row["file_name"] or "").strip()
         pdf_path = ""
+
+        # fallback: use pdf_path column to derive file name if missing
+        if (not file_name) and row["pdf_path"]:
+            file_name = os.path.basename(row["pdf_path"])
+
+        # fallback: use applicantStdn.pdf if still empty
+        if (not file_name) and stdn:
+            candidate = f"{stdn}.pdf"
+            if os.path.exists(os.path.join(attachments_dir, candidate)):
+                file_name = candidate
+            else:
+                # fallback: applicantStdn_<anything>.pdf (take latest by mtime)
+                pattern = f"{stdn}_"
+                cand_files = [
+                    f for f in os.listdir(attachments_dir)
+                    if f.lower().startswith(pattern.lower()) and f.lower().endswith(".pdf")
+                ]
+                if cand_files:
+                    cand_files.sort(key=lambda n: os.path.getmtime(os.path.join(attachments_dir, n)), reverse=True)
+                    file_name = cand_files[0]
+
         if file_name:
             src_pdf = os.path.join(attachments_dir, file_name)
             dst_pdf = os.path.join(files_dir, file_name)
             if os.path.exists(src_pdf):
                 shutil.copy2(src_pdf, dst_pdf)
                 pdf_path = f"files/{file_name}"
+            else:
+                # if source missing, leave pdf_path empty so前端不會點到 404
+                pdf_path = ""
 
         data.append({
             "applicantStdn": stdn,

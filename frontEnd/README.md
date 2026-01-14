@@ -4,9 +4,9 @@
 
 目錄
 - `index.html`：主介面，含上傳表單與 AI 回饋視窗。
-- `label.html`, `teacher.html`, `login.html`, `register.html`：其他頁面（若存在）。
-- `review.css`, `teacher.css`, `label.css`：樣式檔。
-- `script.js`, `teacher.js`, `label.js`：前端行為，`script.js` 為主要入口。
+- `teacher.html`, `login.html`, `register.html`：其他頁面（若存在）。
+- `review.css`, `teacher.css`：樣式檔。
+- `script.js`, `teacher.js`：前端行為，`script.js` 為主要入口。
 
 快速本地測試
 
