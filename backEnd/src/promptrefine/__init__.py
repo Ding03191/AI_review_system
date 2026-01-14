@@ -1,14 +1,15 @@
 import logging
 
-from flask import Flask
-from flask_cors import CORS
-from .config import Config
-from .db import dbStoring as db
-from .api.core import core_bp
-from .api.auth import auth_bp
-
 
 def create_app():
+    from flask import Flask
+    from flask_cors import CORS
+
+    from .config import Config
+    from .db import dbStoring as db
+    from .api.core import core_bp
+    from .api.auth import auth_bp
+
     app = Flask(__name__)
     app.config.from_object(Config)
 
