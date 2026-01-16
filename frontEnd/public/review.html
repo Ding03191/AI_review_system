@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>審核頁面｜審核系統</title>
+  <link rel="stylesheet" href="../src/css/review.css">
+</head>
+<body>
+  <header class="appbar" role="banner">
+    <a class="icon-btn" href="index.html" aria-label="返回首頁">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </a>
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true"></span>
+      <h1>審核頁面</h1>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+    <section class="hero">
+      <div class="hero-text">
+        <h2>磨課師學習審核</h2>
+        <p class="muted">上傳 PDF</p>
+      </div>
+      <div class="hero-cta">
+        <a class="btn primary" href="#review-form">開始審核</a>
+      </div>
+    </section>
+
+    <section id="review-form" class="page">
+      <div class="section-hd">
+        <h3>磨課師學習審核</h3>
+        <p class="muted">填寫申請資料並上傳檔案</p>
+      </div>
+
+      <div class="layout-2col">
+        <article class="card">
+          <div class="card-hd">申請資料</div>
+          <div class="card-bd">
+            <form id="reviewForm" class="form">
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lbl req">案件編號</span>
+                  <input name="caseNo" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">申請人姓名</span>
+                  <input name="name" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學號</span>
+                  <input name="studentId" required>
+                </label>
+                <label class="field">
+                  <span class="lbl req">學習項目</span>
+                  <input name="project" required>
+                </label>
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">特色或產業需求</span>
+                  <input name="feature" required>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">永續目標（可多選）</span>
+                  <div id="sdgMulti" class="ms-host" style="margin-bottom:8px;"></div>
+                  <input type="hidden" id="sdg_values" name="sdg_values" value="">
+                  <div id="sdgChosen" class="tags" style="margin-top:6px;"></div>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">課程名稱</span>
+                  <div id="courseList" class="course-list">
+                    <div class="course-row">
+                      <input type="text" name="courses" placeholder="輸入課程名稱">
+                      <button type="button" class="icon-btn sm course-remove" aria-label="????">-</button>
+                    </div>
+                  </div>
+                  <div class="actions" style="justify-content:flex-start;gap:8px;margin-top:8px;">
+                    <button type="button" class="btn ghost" id="addCourseBtn">＋新增課程</button>
+                  </div>
+                </label>
+
+                <label class="field">
+                  <span class="lbl req">總時數</span>
+                  <input name="totalHours" required>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl">課程主題（可多選）</span>
+                  <div id="topicMulti" class="multiselect" data-name="topics"></div>
+                </label>
+
+                <label class="field" style="grid-column:1/-1;">
+                  <span class="lbl req">上傳檔案</span>
+                  <input type="file" name="file" accept=".pdf,.doc,.docx" required>
+                </label>
+              </div>
+
+              <div class="actions">
+                <button class="btn primary" type="submit">送出審核</button>
+              </div>
+            </form>
+          </div>
+        </article>
+
+        <article class="card side-fill">
+          <div class="card-hd">審核結果</div>
+          <div class="card-bd">
+            <div id="reviewResult" class="kbd fillbox">送出後顯示結果</div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="../src/js/review.js" defer></script>
+</body>
+</html>

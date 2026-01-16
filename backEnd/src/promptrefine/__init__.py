@@ -9,6 +9,7 @@ def create_app():
     from .db import dbStoring as db
     from .api.core import core_bp
     from .api.auth import auth_bp
+    from .api.analyze import analyze_bp
 
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -23,6 +24,7 @@ def create_app():
 
     app.register_blueprint(core_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(analyze_bp)
 
     logging.getLogger(__name__).info("DB in use: %s", db.DB_NAME)
     return app
