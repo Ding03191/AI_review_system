@@ -339,6 +339,41 @@ textarea{min-height:96px;
   height:16px;
   margin:0
 }
+
+/* Review result */
+.review-result{display:flex;
+  flex-direction:column;
+  gap:10px
+}
+.review-status{font-weight:700;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#f8fafc;
+  border:1px solid var(--border)
+}
+.review-status.is-pass{color:var(--ok);
+  background:#f0fdf4;
+  border-color:#c9f2d7
+}
+.review-status.is-fail{color:var(--danger);
+  background:#fef2f2;
+  border-color:#fecaca
+}
+.review-label{font-weight:600}
+.review-reason{white-space:pre-wrap;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+  font-family:inherit
+}
+.review-meta{display:grid;
+  gap:6px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px
+}
 .ms-actions{display:flex;
   gap:8px;
   justify-content:flex-end;

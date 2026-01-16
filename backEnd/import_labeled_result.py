@@ -21,7 +21,7 @@ TABLE_LABELS = "history_labels"
 def import_labeled_result():
     # 1. 檢查檔案存在
     if not os.path.exists(JSON_FILE):
-        print(f"❌ 找不到 JSON 檔案：{JSON_FILE}")
+        print(f"找不到 JSON 檔案：{JSON_FILE}")
         return
 
     # 2. 讀取 JSON
