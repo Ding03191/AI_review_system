@@ -160,6 +160,8 @@ def analyze_application():
     applicant_no = (request.form.get('caseNo') or '').strip()
     applicant_name = (request.form.get('name') or '').strip()
     applicant_stdn = (request.form.get('studentId') or '').strip()
+    course_list = [c for c in request.form.getlist('courses') if c.strip()]
+    course_name = ', '.join(course_list)
     if not applicant_no or not applicant_name or not applicant_stdn:
         return jsonify({'error': 'Missing required applicant fields.'}), 400
 
@@ -167,6 +169,7 @@ def analyze_application():
         'applicantStdn': applicant_stdn,
         'applicantNo': int(applicant_no) if applicant_no.isdigit() else applicant_no,
         'applicantName': applicant_name,
+        'course_name': course_name,
         'file_name': safe_name,
         'pdf_path': f'attachments/{safe_name}',
         'isPassed': False,

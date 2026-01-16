@@ -39,14 +39,20 @@ def export_data_json():
         cur.execute("ALTER TABLE history ADD COLUMN file_name TEXT")
     if "pdf_path" not in cols:
         cur.execute("ALTER TABLE history ADD COLUMN pdf_path TEXT")
+    if "course_name" not in cols:
+        cur.execute("ALTER TABLE history ADD COLUMN course_name TEXT")
     conn.commit()
 
     # 依照你現在的 history 欄位來 SELECT
     cur.execute("""
-        SELECT applicantStdn, applicantNo, applicantName,
-               file_name, pdf_path,
-               isPassed, aiFeedback, applyDate, applyTime
-        FROM history
+        SELECT h.applicantStdn, h.applicantNo, h.applicantName,
+               h.course_name, h.file_name, h.pdf_path,
+               h.isPassed, h.aiFeedback, h.applyDate, h.applyTime
+        FROM history AS h
+        LEFT JOIN history_labels AS l
+          ON h.applicantStdn = l.applicantStdn
+         AND h.applicantNo = l.applicantNo
+        WHERE l.id IS NULL
     """)
 
     rows = cur.fetchall()
@@ -60,6 +66,7 @@ def export_data_json():
         ai_feedback = row["aiFeedback"]
         apply_date = row["applyDate"]
         apply_time = row["applyTime"]
+        course_name = (row["course_name"] or "").strip()
 
         # 目前先沒有確定 PDF 檔名 → 先放空字串
         # 之後你知道檔名規則，我們再把這裡改掉就好
@@ -107,7 +114,7 @@ def export_data_json():
             "applyDate": apply_date,
             "applyTime": apply_time,
             # 先留給第三方看的補充欄位（之後可用）
-            "course_name": "",
+            "course_name": course_name,
             "hours": "",
             "score": ""
         })

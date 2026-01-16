@@ -40,6 +40,7 @@ def init_db():
             applicantStdn TEXT,
             applicantNo INTEGER,
             applicantName TEXT,
+            course_name TEXT,
             file_name TEXT,
             pdf_path TEXT,
             isPassed BOOLEAN,
@@ -82,7 +83,7 @@ def init_db():
 
     # Backward-compatible schema migration: add columns if old DB already exists.
     existing_cols = {row[1] for row in c.execute(f"PRAGMA table_info({TABLE_NAME})").fetchall()}
-    for col, col_type in (("file_name", "TEXT"), ("pdf_path", "TEXT")):
+    for col, col_type in (("file_name", "TEXT"), ("pdf_path", "TEXT"), ("course_name", "TEXT")):
         if col not in existing_cols:
             c.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN {col} {col_type}")
 
@@ -101,15 +102,17 @@ def insert_scoring_result(data):
             applicantStdn,
             applicantNo,
             applicantName,
+            course_name,
             file_name,
             pdf_path,
             isPassed,
             aiFeedback,
             applyDate,
             applyTime
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(applicantStdn, applicantNo) DO UPDATE SET
             applicantName = excluded.applicantName,
+            course_name   = excluded.course_name,
             file_name     = excluded.file_name,
             pdf_path      = excluded.pdf_path,
             isPassed      = excluded.isPassed,
@@ -120,6 +123,7 @@ def insert_scoring_result(data):
         data['applicantStdn'],
         data['applicantNo'],
         data['applicantName'],
+        data.get('course_name'),
         data.get('file_name'),
         data.get('pdf_path'),
         int(data['isPassed']),  # Store boolean as 0 or 1
