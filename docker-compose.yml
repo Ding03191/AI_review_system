@@ -16,10 +16,12 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: nginx:alpine
+    build:
+      context: ./frontEnd
+      dockerfile: Dockerfile
     container_name: review-frontEnd
     ports:
-      - "8080:80"
-    volumes:
-      - ./frontEnd:/usr/share/nginx/html:ro
+      - "3000:80"
+    depends_on:
+      - backend
     restart: unless-stopped

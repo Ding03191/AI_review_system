@@ -25,12 +25,14 @@ services:
       retries: 3
 
   frontend:
-    image: nginx:alpine
+    build:
+      context: ./frontEnd
+      dockerfile: Dockerfile
     container_name: promptrefine-frontend
     ports:
-      - "8080:80"
-    volumes:
-      - ./frontEnd:/usr/share/nginx/html:ro
+      - "3000:80"
+    depends_on:
+      - backend
     restart: always
 
   # optional kb builder (run manually for heavy jobs)

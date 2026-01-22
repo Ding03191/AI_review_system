@@ -7,6 +7,7 @@ from PyPDF2 import PdfReader
 from openai import OpenAI
 from pdf2image import convert_from_path
 import pytesseract
+from PIL import ImageFilter
 
 from ..db import dbStoring as db
 
@@ -16,6 +17,8 @@ _BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 _ATTACHMENTS_DIR = os.path.join(_BACKEND_DIR, 'attachments')
 _MAX_TEXT_CHARS = 20000
 _OCR_MAX_PAGES = int(os.environ.get("OCR_MAX_PAGES", "6"))
+_ENHANCE_DPI = int(os.environ.get("PDF_ENHANCE_DPI", "350"))
+_PROMPT_FILE = os.path.join(_BACKEND_DIR, 'promptList', 'applicationInstruciton.txt')
 
 
 def _extract_pdf_text(pdf_path):
@@ -37,10 +40,47 @@ def _extract_pdf_text(pdf_path):
 
     text = '\n'.join(text_parts).strip()
     if not text:
-        text = _ocr_pdf_text(pdf_path)
+        enhanced_path = _enhance_pdf_for_ai(pdf_path)
+        text = _ocr_pdf_text(enhanced_path)
     if len(text) > _MAX_TEXT_CHARS:
         text = text[:_MAX_TEXT_CHARS]
     return text
+
+
+def _enhance_pdf_for_ai(pdf_path):
+    if not pdf_path.lower().endswith(".pdf"):
+        return pdf_path
+
+    enhanced_path = f"{os.path.splitext(pdf_path)[0]}_enhanced.pdf"
+    try:
+        images = convert_from_path(pdf_path, dpi=_ENHANCE_DPI)
+    except Exception:
+        return pdf_path
+
+    if not images:
+        return pdf_path
+
+    enhanced_images = []
+    for image in images:
+        try:
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            image = image.filter(ImageFilter.UnsharpMask(radius=1.5, percent=150, threshold=3))
+        except Exception:
+            pass
+        enhanced_images.append(image)
+
+    try:
+        enhanced_images[0].save(
+            enhanced_path,
+            save_all=True,
+            append_images=enhanced_images[1:],
+            resolution=_ENHANCE_DPI,
+        )
+    except Exception:
+        return pdf_path
+
+    return enhanced_path
 
 
 def _ocr_pdf_text(pdf_path):
@@ -81,6 +121,29 @@ def _parse_ai_json(raw_text):
             return None
 
 
+def _load_system_prompt():
+    try:
+        with open(_PROMPT_FILE, 'r', encoding='utf-8') as handle:
+            content = handle.read().strip()
+            if content:
+                return content
+    except Exception:
+        pass
+
+    try:
+        with open(_PROMPT_FILE, 'r', encoding='cp950') as handle:
+            content = handle.read().strip()
+            if content:
+                return content
+    except Exception:
+        pass
+
+    return (
+        "You are a reviewer. Reply in Traditional Chinese and return JSON only. "
+        "The JSON must include isPassed and aiFeedback."
+    )
+
+
 def _analyze_with_ai(pdf_text, form_data):
     api_key = current_app.config.get("OPENAI_API_KEY")
     if not api_key:
@@ -89,10 +152,7 @@ def _analyze_with_ai(pdf_text, form_data):
     model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     client = OpenAI(api_key=api_key)
 
-    system_prompt = (
-        "你是審核員，必須以繁體中文輸出審核結果。"
-        "只回傳 JSON（不要 markdown），欄位包含 isPassed（true/false）與 aiFeedback（條列式理由）。"
-    )
+    system_prompt = _load_system_prompt()
     user_prompt = (
         "請根據以下 PDF 內容與表單資料進行審核，回傳 JSON。\n\n"
         f"表單資料：\n"
@@ -117,7 +177,11 @@ def _analyze_with_ai(pdf_text, form_data):
         temperature=0.2,
     )
     content = (resp.choices[0].message.content or "").strip()
+    print("[AI raw response]")
+    print(content)
     parsed = _parse_ai_json(content)
+    print("[AI parsed response]")
+    print(parsed)
     if not parsed:
         return {"isPassed": False, "aiFeedback": "AI 回傳格式錯誤，無法解析。"}
 
