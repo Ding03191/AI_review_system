@@ -10,6 +10,7 @@
 - AI 產出評分與回饋
 - 評分紀錄保存到 SQLite
 - 簡單的前端介面（HTML/CSS/JS）
+- 影像切塊 + 重疊 + 融合 API（支援偵測框與分割機率圖融合）
 
 ## 技術棧
 
@@ -89,3 +90,117 @@ DEBUG=True
 
 - 變更紀錄：`CHANGELOG.md`
 - 貢獻指南：`CONTRIBUTING.md`
+
+## 影像切塊與融合 API
+
+### 1) 產生切塊座標
+
+`POST /api/vision/tiles`
+
+Request:
+
+```json
+{
+  "imageWidth": 4032,
+  "imageHeight": 3024,
+  "tileWidth": 1024,
+  "tileHeight": 1024,
+  "overlapX": 192,
+  "overlapY": 192
+}
+```
+
+Response (節錄):
+
+```json
+{
+  "tileCount": 20,
+  "tiles": [
+    { "tileId": "t0", "x": 0, "y": 0, "width": 1024, "height": 1024, "x2": 1024, "y2": 1024 }
+  ]
+}
+```
+
+### 2) 融合切塊偵測框
+
+`POST /api/vision/fuse/detections`
+
+Request:
+
+```json
+{
+  "iouThreshold": 0.5,
+  "scoreThreshold": 0.2,
+  "tilePredictions": [
+    {
+      "tileId": "t3",
+      "x": 832,
+      "y": 0,
+      "detections": [
+        { "bbox": [180, 210, 320, 360], "score": 0.93, "label": "defect" }
+      ]
+    }
+  ]
+}
+```
+
+Response (節錄):
+
+```json
+{
+  "count": 1,
+  "detections": [
+    { "bbox": [1012.2, 210.0, 1152.1, 360.4], "score": 0.93, "label": "defect", "sources": ["t3"] }
+  ]
+}
+```
+
+### 3) 融合切塊分割機率圖
+
+`POST /api/vision/fuse/mask`
+
+Request:
+
+```json
+{
+  "imageWidth": 2048,
+  "imageHeight": 2048,
+  "threshold": 0.5,
+  "tileProbabilityMaps": [
+    { "x": 0, "y": 0, "probability": [[0.1, 0.9], [0.2, 0.8]] }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "probability": [[...]],
+  "mask": [[0, 1], [0, 1]]
+}
+```
+
+### 4) 後端直接串模型 callback
+
+```python
+from PIL import Image
+from promptrefine.services import TilingConfig, run_tiled_detection_inference
+
+img = Image.open("sample.jpg").convert("RGB")
+
+def my_predictor(tile_image, tile_meta):
+    # 回傳 tile local 座標
+    return [
+        {"bbox": [100, 120, 220, 260], "score": 0.91, "label": "defect"}
+    ]
+
+result = run_tiled_detection_inference(
+    img,
+    my_predictor,
+    config=TilingConfig(tile_width=1024, tile_height=1024, overlap_x=192, overlap_y=192),
+    iou_threshold=0.5,
+    score_threshold=0.2,
+)
+print(result["detections"])
+```

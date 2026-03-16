@@ -1,70 +1,77 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="api-base" content="http://127.0.0.1:5000">
-  <title>歷史紀錄查詢｜審核系統</title>
+  <title>Review | History</title>
   <link rel="stylesheet" href="../src/css/review.css">
-  <link rel="stylesheet" href="../src/css/history.css">
 </head>
-<body>
-  <header class="appbar" role="banner">
-    <a class="icon-btn" href="index.html" aria-label="返回首頁">
-      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-    </a>
+<body class="page-shell" data-page="history">
+  <header class="topbar" role="banner">
     <div class="brand">
       <span class="brand-badge" aria-hidden="true"></span>
-      <h1>歷史紀錄</h1>
+      <div class="brand-title">Review</div>
+    </div>
+    <div class="user-actions">
+      <button class="avatar-btn" id="userMenuBtn" aria-haspopup="true" aria-expanded="false" data-user-initial>U</button>
+      <button class="gear-btn" id="userMenuGear" aria-label="User Menu">...</button>
     </div>
   </header>
 
-  <main class="container" role="main">
-    <section class="page">
+  <main class="layout" role="main">
+    <aside class="sidebar">
+      <div class="nav-title">Review</div>
+      <a class="nav-item" href="review.html">Submit</a>
+      <a class="nav-item active" href="history.html">History</a>
+      <a class="nav-item" href="label.html" data-role="teacher">Teacher Review</a>
+    </aside>
+
+    <section class="main">
       <div class="section-hd">
-        <h3>歷史紀錄查詢</h3>
-        <p class="muted">依日期查詢當日申請摘要與明細</p>
+        <h3>History</h3>
+        <p class="muted">Search by time, student ID, or name.</p>
       </div>
 
       <article class="card">
-        <div class="card-hd">查詢條件</div>
+        <div class="card-hd">Filters</div>
         <div class="card-bd">
-          <form id="recordQueryForm" class="form">
-            <div class="grid g-2">
-              <label class="field">
-                <span class="lbl req">日期</span>
-                <input id="recordDate" name="recordDate" type="date" required>
-              </label>
-              <div class="field">
-                <span class="lbl">&nbsp;</span>
-                <button class="btn primary" type="submit">查詢</button>
-              </div>
+          <form id="recordQueryForm" class="form filter-stack">
+            <label class="field">
+              <span class="lbl">Time</span>
+              <input id="recordTime" placeholder="YYYY-MM-DD or HH:MM">
+            </label>
+            <label class="field">
+              <span class="lbl">Student ID</span>
+              <input id="recordStudentId">
+            </label>
+            <label class="field">
+              <span class="lbl">Name</span>
+              <input id="recordName">
+            </label>
+            <div class="actions end">
+              <button class="btn primary" type="submit">Search</button>
             </div>
           </form>
+        </div>
+      </article>
 
-          <div id="recordSummary" class="records-summary" aria-live="polite">
-            <div class="summary-item"><span class="k">總數</span><span class="v" id="summaryTotal">-</span></div>
-            <div class="summary-item"><span class="k">通過</span><span class="v" id="summaryPassed">-</span></div>
-            <div class="summary-item"><span class="k">未通過</span><span class="v" id="summaryFailed">-</span></div>
-          </div>
-
-          <div class="records-table-wrap">
-            <table class="records-table">
+      <article class="card">
+        <div class="card-hd">Records</div>
+        <div class="card-bd">
+          <div class="table-wrap">
+            <table class="table compact" id="historyTable">
               <thead>
                 <tr>
-                  <th>申請時間</th>
-                  <th>申請人</th>
-                  <th>案件編號</th>
-                  <th>學號</th>
-                  <th>結果</th>
-                  <th>AI 回饋</th>
-                  <th>檔案</th>
+                  <th>Time</th>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Feedback</th>
                 </tr>
               </thead>
               <tbody id="recordList">
-                <tr>
-                  <td class="empty" colspan="7">請選擇日期後查詢</td>
-                </tr>
+                <tr><td colspan="4" class="empty">No data</td></tr>
               </tbody>
             </table>
           </div>
@@ -73,6 +80,20 @@
     </section>
   </main>
 
+  <div class="menu-panel" id="userMenuPanel" aria-hidden="true">
+      <div class="menu-head">
+        <div class="menu-name" data-user-name>Student</div>
+        <div class="menu-sub" data-user-student>Student ID</div>
+      </div>
+      <a class="menu-item" href="review.html">Profile</a>
+      <a class="menu-item" href="history.html">History</a>
+      <a class="menu-item" href="label.html" data-role="teacher">Teacher Review</a>
+      <button class="menu-item danger" type="button" id="btnLogout">Logout</button>
+  </div>
+
+  <footer class="app-footer">AI Review Platform</footer>
+
   <script src="../src/js/history.js" defer></script>
+  <script src="../src/js/layout.js" defer></script>
 </body>
 </html>

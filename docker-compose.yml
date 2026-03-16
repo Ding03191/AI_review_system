@@ -10,6 +10,8 @@ services:
       - .env
     user: "0:0"
     volumes:
+      - ./backEnd/src:/app/src
+      - ./backEnd/app.py:/app/app.py
       - ./backEnd/attachments:/app/attachments
       - ./backEnd/vectorstores:/app/vectorstores
       - ./backEnd/db:/app/db
@@ -21,7 +23,10 @@ services:
       dockerfile: Dockerfile
     container_name: review-frontEnd
     ports:
-      - "3000:80"
+      - "8080:80"
+    volumes:
+      - ./frontEnd/public:/usr/share/nginx/html
+      - ./frontEnd/src:/usr/share/nginx/html/src
     depends_on:
       - backend
     restart: unless-stopped

@@ -5,6 +5,10 @@
   gap:12px;
   margin-top:12px;
 }
+.g-3{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.form .grid.g-3{gap:12px}
 .summary-item{
   border:1px solid var(--border);
   border-radius:12px;
@@ -51,6 +55,7 @@
 .records-table a:hover{text-decoration:underline;}
 @media (max-width:840px){
   .records-summary{grid-template-columns:1fr;}
+  .g-3{grid-template-columns:1fr;}
   .records-table th:nth-child(6),
   .records-table td:nth-child(6){min-width:240px;}
   .records-table th:nth-child(7),

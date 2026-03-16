@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>Review | Teacher</title>
+  <link rel="stylesheet" href="../src/css/review.css">
+</head>
+<body class="page-shell" data-page="label">
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true"></span>
+      <div class="brand-title">Review</div>
+    </div>
+    <div class="user-actions">
+      <button class="avatar-btn" id="userMenuBtn" aria-haspopup="true" aria-expanded="false" data-user-initial>U</button>
+      <button class="gear-btn" id="userMenuGear" aria-label="User Menu">...</button>
+    </div>
+  </header>
+
+  <main class="layout" role="main">
+    <aside class="sidebar">
+      <div class="nav-title">Review</div>
+      <a class="nav-item" href="review.html">Submit</a>
+      <a class="nav-item" href="history.html">History</a>
+      <a class="nav-item active" href="label.html" data-role="teacher">Teacher Review</a>
+    </aside>
+
+    <section class="main">
+      <div class="section-hd">
+        <h3>Teacher Review</h3>
+        <p class="muted">Review student submissions and export results.</p>
+      </div>
+
+      <article class="card">
+        <div class="card-hd">
+          <div class="tabs">
+            <button id="tabUnlabeled" class="tab active" type="button">Pending</button>
+            <button id="tabLabeled" class="tab" type="button">Submitted</button>
+          </div>
+          <div class="actions">
+            <button id="btnReloadLabel" class="btn ghost" type="button">Reload</button>
+            <button id="btnExportLabel" class="btn primary" type="button">Export Excel</button>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div id="panelUnlabeled">
+            <div id="unlabeledEmpty" class="empty">No pending records.</div>
+            <div id="unlabeledList" class="label-list"></div>
+          </div>
+          <div id="panelLabeled" class="is-hidden">
+            <div id="labeledEmpty" class="empty">No submitted records.</div>
+            <div id="labeledList" class="label-list"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <div class="menu-panel" id="userMenuPanel" aria-hidden="true">
+      <div class="menu-head">
+        <div class="menu-name" data-user-name>Teacher</div>
+        <div class="menu-sub" data-user-student></div>
+      </div>
+      <a class="menu-item" href="review.html">Profile</a>
+      <a class="menu-item" href="history.html">History</a>
+      <a class="menu-item" href="label.html" data-role="teacher">Teacher Review</a>
+      <button class="menu-item danger" type="button" id="btnLogout">Logout</button>
+  </div>
+
+  <footer class="app-footer">AI Review</footer>
+
+  <script src="../src/js/label.js" defer></script>
+  <script src="../src/js/layout.js" defer></script>
+</body>
+</html>

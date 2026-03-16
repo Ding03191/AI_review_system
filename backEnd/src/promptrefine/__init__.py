@@ -8,6 +8,7 @@ def create_app():
     from .config import Config
     from .db import dbStoring as db
     from .api.core import core_bp
+    from .api import auth as auth_api
     from .api.auth import auth_bp
     from .api.analyze import analyze_bp
 
@@ -23,6 +24,7 @@ def create_app():
     db.init_users_table()
 
     app.register_blueprint(core_bp)
+    auth_api.init_oauth(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(analyze_bp)
 

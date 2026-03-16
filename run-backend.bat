@@ -6,6 +6,7 @@ IF EXIST gaienv\env\Scripts\activate.bat (
   echo 虛擬環境不存在，請先建立或啟用你的 Python 環境。
 )
 set FLASK_ENV=development
+set DB_PATH=..\backEnd\db\scoringHistory.sqlite
 REM 請先設定環境變數 OPENAI_API_KEY 或在 .env 中設定
 cd backEnd
 python app.py

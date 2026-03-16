@@ -1,33 +1,50 @@
-<!doctype html><html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>審核系統｜註冊</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>Register | System</title>
   <link rel="stylesheet" href="../src/css/review.css">
 </head>
-<body data-page="register">
-<section id="page-login" class="page fade-in">
-  <div class="auth-card slide-up">
-    <div class="auth-head">
-      <div class="badge"></div>
-      <div><div class="title">建立新帳號</div><div class="muted">用一個帳號管理你的申請與審核</div></div>
+<body class="auth-page">
+  <main class="auth-wrap">
+    <div class="auth-logo">
+      <div class="logo-mark"></div>
+      <div class="logo-text">Review</div>
     </div>
-    <div class="auth-body">
-      <form id="formRegister" autocomplete="off">
-        <div class="field floating"><input type="text" name="name" placeholder=" " required><label>姓名</label></div>
-        <div class="field floating"><input type="email" name="email" placeholder=" " required><label>Email</label></div>
-        <div class="field floating with-addon">
-          <input id="regPwd" type="password" name="password" placeholder=" " minlength="6" required>
-          <label>密碼（至少 6 碼）</label>
-          <button type="button" class="icon-btn" data-toggle="#regPwd" aria-label="顯示/隱藏密碼">👁</button>
-        </div>
-        <div id="registerError" class="auth-error"></div>
-        <div class="login-actions">
-          <button type="submit" class="btn primary">建立帳號</button>
-          <a class="btn ghost" href="login.html">返回登入</a>
-        </div>
+
+    <section class="auth-card-simple">
+      <div class="auth-title">Create Account</div>
+
+      <div class="auth-field">
+        <label>Name</label>
+        <input form="formRegister" type="text" name="name" required>
+      </div>
+      <div class="auth-field">
+        <label>Student ID</label>
+        <input form="formRegister" type="text" name="studentId" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input form="formRegister" id="registerPwd" type="password" name="password" minlength="6" required>
+      </div>
+
+      <div id="registerError" class="auth-error"></div>
+
+      <form id="formRegister">
+        <button type="submit" class="btn primary full">Register</button>
       </form>
-    </div>
-  </div>
-</section>
-<script src="../src/js/auth.js"></script>
-</body></html>
+
+      <div class="auth-foot">
+        <a href="login.html">Back to login</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="auth-footer">Copyright ? 2026</footer>
+
+  <script src="../src/js/auth.js"></script>
+</body>
+</html>

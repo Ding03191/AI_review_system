@@ -1,36 +1,50 @@
-<!doctype html><html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>審核系統｜登入</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="api-base" content="http://127.0.0.1:5000">
+  <title>Login | System</title>
   <link rel="stylesheet" href="../src/css/review.css">
 </head>
-<body data-page="login">
-<section id="page-login" class="page fade-in">
-  <div class="auth-card slide-up">
-    <div class="auth-head">
-      <div class="badge"></div>
-      <div><div class="title">審核系統</div><div id="loginBadge" class="muted">未登入</div></div>
+<body class="auth-page">
+  <main class="auth-wrap">
+    <div class="auth-logo">
+      <div class="logo-mark"></div>
+      <div class="logo-text">Review</div>
     </div>
-    <div class="auth-body">
-      <form id="formLogin" autocomplete="off">
-        <div class="field floating">
-          <input type="email" name="account" placeholder=" " required>
-          <label>Email 帳號</label>
-        </div>
-        <div class="field floating with-addon">
-          <input id="loginPwd" type="password" name="password" placeholder=" " minlength="6" required>
-          <label>密碼</label>
-          <button type="button" class="icon-btn" data-toggle="#loginPwd" aria-label="顯示/隱藏密碼">👁</button>
-        </div>
-        <div class="row between">
-          <label class="checkbox"><input type="checkbox" id="rememberMe"> 記住我</label>
-          <a class="muted small" href="register.html">還沒有帳號？註冊</a>
-        </div>
-        <div id="loginError" class="auth-error"></div>
-        <div class="login-actions"><button type="submit" class="btn primary">登入</button></div>
+
+    <section class="auth-card-simple">
+      <button class="btn ghost full" type="button" id="btnGoogleLogin">Sign in with Google</button>
+
+      <div class="auth-field">
+        <label>Student ID</label>
+        <input form="formLogin" type="text" name="studentId" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input form="formLogin" id="loginPwd" type="password" name="password" minlength="6" required>
+      </div>
+
+      <label class="auth-check">
+        <input type="checkbox" form="formLogin"> Keep me signed in
+      </label>
+
+      <div id="loginError" class="auth-error"></div>
+
+      <form id="formLogin">
+        <button type="submit" class="btn primary full">Login</button>
       </form>
-    </div>
-  </div>
-</section>
-<script src="../src/js/auth.js"></script>
-</body></html>
+
+      <div class="auth-foot">
+        No account? <a href="register.html">Register</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="auth-footer">Copyright ? 2026</footer>
+
+  <script src="../src/js/auth.js"></script>
+</body>
+</html>
