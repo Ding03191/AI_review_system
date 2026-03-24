@@ -10,9 +10,7 @@ function resolveApiBase() {
       return url.origin.replace(/\/+$/, '');
     }
   } catch (error) {}
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  const host = location.hostname || '127.0.0.1';
-  return `${proto}//${host}:5000`;
+  return "";
 }
 
 const API_BASE = resolveApiBase();
@@ -30,6 +28,9 @@ const FIELD_META = {
   exam: { label: '\u6709\u7121\u6e2c\u9a57', keywords: ['\u6709\u7121\u6e2c\u9a57', '\u6e2c\u9a57', '\u6e2c\u9a57\u6210\u7e3e'] },
   target: { label: '\u9069\u7528\u5c0d\u8c61', keywords: ['\u9069\u7528\u5c0d\u8c61'] },
 };
+
+const MISSING_ITEM_TEXT = '未抓取到這個項目';
+const DISPLAY_MISSING_TEXT = '未找到';
 
 const STATUS_LABELS = {
   submitted: '\u5df2\u9001\u51fa',
@@ -166,26 +167,26 @@ function extractGenericValue(fieldKey, ...parts) {
 function expandPackedRows(rawRows) {
   const rows = Array.isArray(rawRows) ? rawRows : [];
   const expanded = [];
-  const expectedItems = ['中文姓名', '課程名稱', '課程期間', '有無測驗', '適用對象'];
+  const expectedItems = ['', '', '', '', ''];
 
   rows.forEach((row) => {
-    const itemText = pickFirst(row, ['item', 'Item', '項目', '辨識項目']);
-    const resultText = pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM辨識到結果', '辨識結果']);
-    const passText = pickFirst(row, ['pass', 'Pass', '符合', 'isPass', 'isPassed']) || '-';
-    const failText = pickFirst(row, ['fail', 'Fail', '不符合']) || '-';
-    const otherText = pickFirst(row, ['other', 'Other', '其它', '其他']) || '-';
+    const itemText = pickFirst(row, ['item', 'Item', '', '']);
+    const resultText = pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM?', '']);
+    const passText = pickFirst(row, ['pass', 'Pass', '', 'isPass', 'isPassed']) || '-';
+    const failText = pickFirst(row, ['fail', 'Fail', '?']) || '-';
+    const otherText = pickFirst(row, ['other', 'Other', '', '']) || '-';
 
-    const itemParts = itemText.split(/[|｜]/).map((part) => part.trim()).filter(Boolean);
-    const resultParts = resultText.split(/[|｜]/).map((part) => part.trim());
+    const itemParts = itemText.split(/[|]/).map((part) => part.trim()).filter(Boolean);
+    const resultParts = resultText.split(/[|]/).map((part) => part.trim());
     if (itemParts.length === expectedItems.length && expectedItems.every((item, index) => itemParts[index] === item)) {
       expectedItems.forEach((item, index) => {
         const value = resultParts[index] || '';
         expanded.push({
           item,
-          result: value === '未抓取到這個項目' ? '' : value,
-          pass: value && value !== '未抓取到這個項目' ? passText : '-',
+          result: value === MISSING_ITEM_TEXT ? '' : value,
+          pass: value && value !== MISSING_ITEM_TEXT ? passText : '-',
           fail: failText,
-          other: value && value !== '未抓取到這個項目' ? '-' : otherText,
+          other: value && value !== MISSING_ITEM_TEXT ? '-' : otherText,
         });
       });
       return;
@@ -206,10 +207,14 @@ function splitLines(value) {
 
 function isMissingItem(value) {
   const text = textOf(value);
-  return text === '未抓取到這個項目'
-    || text === '未擷取到這個項目'
-    || text === '未檢測到這個項目'
-    || /未(?:抓取|擷取|檢測)到這個項目/.test(text);
+  return text === MISSING_ITEM_TEXT
+    || text === DISPLAY_MISSING_TEXT
+    || /(未抓取|未擷取|未檢測).*?項目/.test(text)
+    || /未找到/.test(text);
+}
+
+function hasMissingItemText(value) {
+  return /(未抓取|未擷取|未檢測).*?項目/.test(textOf(value)) || /未找到/.test(textOf(value));
 }
 
 function hasMissingItemText(value) {
@@ -277,8 +282,8 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
       value,
       status: value ? (failed ? 'fail' : 'pass') : (missingItem ? 'fail' : 'other'),
       note: missingItem
-        ? '未抓取到這個項目'
-        : (failed ? (failText && !isMarked(failText) ? failText : reasonText) : (otherText || '未抓取到這個項目')),
+        ? DISPLAY_MISSING_TEXT
+        : (failed ? (failText && !isMarked(failText) ? failText : reasonText) : (otherText || DISPLAY_MISSING_TEXT)),
     };
     bucket[fieldKey] = mergeEntry(bucket[fieldKey], entry, fieldKey);
   };
@@ -314,40 +319,61 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
     });
   }
 
-  return FIELD_ORDER.map((fieldKey) => {
-    const entry = bucket[fieldKey];
-    if (!entry) {
-      return {
-        [COL_ITEM]: FIELD_META[fieldKey].label,
-        [COL_PASS]: '-',
-        [COL_FAIL]: '-',
-        [COL_OTHER]: '\u672a\u6293\u53d6\u5230\u9019\u500b\u9805\u76ee',
-      };
-    }
+  return (() => {
+    const output = [];
 
-    let itemText = FIELD_META[fieldKey].label;
-    if (entry.value) {
-      if (fieldKey === 'course') {
-        const courseLines = entry.value
-          .split('\n')
-          .map((value) => value.trim())
-          .filter(Boolean)
-          .map((value, index) => `\u8ab2\u7a0b${index + 1}\uff1a${value}`);
-        itemText = `${FIELD_META[fieldKey].label}\n${courseLines.join('\n')}`;
-      } else {
-        itemText = `${FIELD_META[fieldKey].label}\uff1a${entry.value}`;
+    FIELD_ORDER.forEach((fieldKey) => {
+      const entry = bucket[fieldKey];
+      const label = FIELD_META[fieldKey].label;
+
+      if (!entry) {
+        output.push({
+          [COL_ITEM]: `${label}：${DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: '-',
+          [COL_FAIL]: DISPLAY_MISSING_TEXT,
+          [COL_OTHER]: '-',
+        });
+        return;
       }
-    }
 
-    return {
-      [COL_ITEM]: itemText,
-      [COL_PASS]: entry.status === 'pass' ? '\u25cb' : '-',
-      [COL_FAIL]: entry.status === 'fail'
-        ? (isMissingItem(entry.note) ? '\u4e0d\u7b26\u5408' : (entry.note || '\u4e0d\u7b26\u5408'))
-        : '-',
-      [COL_OTHER]: entry.value ? '-' : (entry.note || '\u672a\u6293\u53d6\u5230\u9019\u500b\u9805\u76ee'),
-    };
-  });
+      if (fieldKey === 'course') {
+        const courses = (entry.value || '')
+          .split('\n')
+          .map((v) => v.trim())
+          .filter(Boolean);
+
+        if (courses.length) {
+          courses.forEach((course, index) => {
+            output.push({
+              [COL_ITEM]: `課程${index + 1}：${course}`,
+              [COL_PASS]: entry.status === 'pass' ? '○' : '-',
+              [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
+              [COL_OTHER]: '-',
+            });
+          });
+        } else {
+          output.push({
+            [COL_ITEM]: `課程1：${DISPLAY_MISSING_TEXT}`,
+            [COL_PASS]: '-',
+            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+            [COL_OTHER]: '-',
+          });
+        }
+        return;
+      }
+
+      const itemText = entry.value ? `${label}：${entry.value}` : `${label}：${DISPLAY_MISSING_TEXT}`;
+
+      output.push({
+        [COL_ITEM]: itemText,
+        [COL_PASS]: entry.status === 'pass' ? '○' : '-',
+        [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
+        [COL_OTHER]: '-',
+      });
+    });
+
+    return output;
+  })();
 }
 
 function resolveElements() {
@@ -438,7 +464,7 @@ function renderResult(data) {
     keyEl.textContent = key;
     const valueEl = document.createElement('div');
     valueEl.className = 'v';
-    valueEl.textContent = value ?? '-';
+    valueEl.textContent = value || '-';
     kv.appendChild(keyEl);
     kv.appendChild(valueEl);
   };

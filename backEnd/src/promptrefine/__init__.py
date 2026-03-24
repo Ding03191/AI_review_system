@@ -4,6 +4,7 @@ import logging
 def create_app():
     from flask import Flask
     from flask_cors import CORS
+    from urllib.parse import urlparse
 
     from .config import Config
     from .db import dbStoring as db
@@ -15,7 +16,32 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    CORS(app, supports_credentials=True)
+    def _origin_from(url):
+        try:
+            u = urlparse(url)
+            if u.scheme and u.netloc:
+                return f"{u.scheme}://{u.netloc}"
+        except Exception:
+            return None
+        return None
+
+    origins = set()
+    frontend_base = app.config.get("FRONTEND_BASE_URL", "")
+    origin = _origin_from(frontend_base)
+    if origin:
+        origins.add(origin)
+    origins.update(
+        {
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+            "http://localhost:8082",
+            "http://127.0.0.1:8082",
+        }
+    )
+
+    CORS(app, supports_credentials=True, origins=sorted(origins))
 
     if not app.config["SECRET_KEY"]:
         raise ValueError("Error: SECRET_KEY environment variable is not set!")

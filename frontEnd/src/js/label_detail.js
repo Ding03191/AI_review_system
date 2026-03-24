@@ -10,9 +10,7 @@ function resolveApiBase() {
       return url.origin.replace(/\/+$/, '');
     }
   } catch (e) {}
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  const host = location.hostname || '127.0.0.1';
-  return `${proto}//${host}:5000`;
+  return "";
 }
 
 const API_BASE = resolveApiBase();
@@ -32,6 +30,9 @@ const FIELD_META = {
   exam: { label: '\u6709\u7121\u6e2c\u9a57', keywords: ['\u6709\u7121\u6e2c\u9a57', '\u6e2c\u9a57', '\u6e2c\u9a57\u6210\u7e3e'] },
   target: { label: '\u9069\u7528\u5c0d\u8c61', keywords: ['\u9069\u7528\u5c0d\u8c61'] },
 };
+
+const MISSING_ITEM_TEXT = '未抓取到這個項目';
+const DISPLAY_MISSING_TEXT = '未找到';
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -138,14 +139,14 @@ function splitLines(value) {
 
 function isMissingItem(value) {
   const text = textOf(value);
-  return text === '\u672a\u6293\u53d6\u5230\u9019\u500b\u9805\u76ee'
-    || text === '\u672a\u64f7\u53d6\u5230\u9019\u500b\u9805\u76ee'
-    || text === '\u672a\u6aa2\u6e2c\u5230\u9019\u500b\u9805\u76ee'
-    || /(\u672a\u6293\u53d6|\u672a\u64f7\u53d6|\u672a\u6aa2\u6e2c).*?\u9805\u76ee/.test(text);
+  return text === MISSING_ITEM_TEXT
+    || text === DISPLAY_MISSING_TEXT
+    || /(未抓取|未擷取|未檢測).*?項目/.test(text)
+    || /未找到/.test(text);
 }
 
 function hasMissingItemText(value) {
-  return /(\u672a\u6293\u53d6|\u672a\u64f7\u53d6|\u672a\u6aa2\u6e2c).*?\u9805\u76ee/.test(textOf(value));
+  return /(未抓取|未擷取|未檢測).*?項目/.test(textOf(value)) || /未找到/.test(textOf(value));
 }
 
 function mergeUniqueText(existing, incoming) {
@@ -292,40 +293,69 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
     });
   }
 
-  return FIELD_ORDER.map((fieldKey) => {
-    const entry = bucket[fieldKey];
-    if (!entry) {
-      return {
-        [COL_ITEM]: FIELD_META[fieldKey].label,
-        [COL_PASS]: '-',
-        [COL_FAIL]: '-',
-        [COL_OTHER]: '\u672a\u6293\u53d6\u5230\u9019\u500b\u9805\u76ee',
-      };
-    }
+  return (() => {
+    const output = [];
 
-    let itemText = FIELD_META[fieldKey].label;
-    if (entry.value) {
-      if (fieldKey === 'course') {
-        const courseLines = entry.value
-          .split('\n')
-          .map((value) => value.trim())
-          .filter(Boolean)
-          .map((value, index) => `\u8ab2\u7a0b${index + 1}\uff1a${value}`);
-        itemText = `${FIELD_META[fieldKey].label}\n${courseLines.join('\n')}`;
-      } else {
-        itemText = `${FIELD_META[fieldKey].label}\uff1a${entry.value}`;
+    FIELD_ORDER.forEach((fieldKey) => {
+      const entry = bucket[fieldKey];
+      const label = FIELD_META[fieldKey].label;
+
+      if (!entry) {
+        output.push({
+          [COL_ITEM]: `${label}：${DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: '-',
+          [COL_FAIL]: DISPLAY_MISSING_TEXT,
+          [COL_OTHER]: '-',
+          [COL_LLM]: '',
+          [COL_REASON]: '',
+        });
+        return;
       }
-    }
 
-    return {
-      [COL_ITEM]: itemText,
-      [COL_PASS]: entry.status === 'pass' ? '\u25cb' : '-',
-      [COL_FAIL]: entry.status === 'fail'
-        ? (isMissingItem(entry.note) ? '\u4e0d\u7b26\u5408' : (entry.note || '\u4e0d\u7b26\u5408'))
-        : '-',
-      [COL_OTHER]: entry.value ? '-' : (entry.note || '\u672a\u6293\u53d6\u5230\u9019\u500b\u9805\u76ee'),
-    };
-  });
+      if (fieldKey === 'course') {
+        const courses = (entry.value || '')
+          .split('\n')
+          .map((v) => v.trim())
+          .filter(Boolean);
+
+        if (courses.length) {
+          courses.forEach((course, index) => {
+            output.push({
+              [COL_ITEM]: `課程${index + 1}：${course}`,
+              [COL_PASS]: entry.status === 'pass' ? '○' : '-',
+              [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
+              [COL_OTHER]: '-',
+              [COL_LLM]: '',
+              [COL_REASON]: '',
+            });
+          });
+        } else {
+          output.push({
+            [COL_ITEM]: `課程1：${DISPLAY_MISSING_TEXT}`,
+            [COL_PASS]: '-',
+            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+            [COL_OTHER]: '-',
+            [COL_LLM]: '',
+            [COL_REASON]: '',
+          });
+        }
+        return;
+      }
+
+      const itemText = entry.value ? `${label}：${entry.value}` : `${label}：${DISPLAY_MISSING_TEXT}`;
+
+      output.push({
+        [COL_ITEM]: itemText,
+        [COL_PASS]: entry.status === 'pass' ? '○' : '-',
+        [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
+        [COL_OTHER]: '-',
+        [COL_LLM]: '',
+        [COL_REASON]: '',
+      });
+    });
+
+    return output;
+  })();
 }
 
 function getQuery() {
@@ -391,7 +421,7 @@ function normalizeEditableRows(rows) {
 }
 
 function buildEditableTable(rows, locked) {
-  const headers = [COL_ITEM, COL_LLM, COL_PASS, COL_FAIL, COL_OTHER, 'Action'];
+  const headers = [COL_ITEM, COL_PASS, COL_FAIL, COL_OTHER, 'Action'];
   const wrap = el('div', 'table-wrap');
   wrap.appendChild(el('div', 'review-label', 'Teacher Edit Table'));
 
@@ -416,14 +446,14 @@ function buildEditableTable(rows, locked) {
     inputItem.type = 'text';
     inputItem.value = data.item || '';
     inputItem.disabled = locked;
+    inputItem.dataset.field = 'item';
     tdItem.appendChild(inputItem);
 
-    const tdResult = document.createElement('td');
     const inputResult = document.createElement('input');
-    inputResult.type = 'text';
+    inputResult.type = 'hidden';
     inputResult.value = data.result || '';
-    inputResult.disabled = locked;
-    tdResult.appendChild(inputResult);
+    inputResult.dataset.field = 'result';
+    tdItem.appendChild(inputResult);
 
     const tdPass = document.createElement('td');
     const passRadio = document.createElement('input');
@@ -432,6 +462,7 @@ function buildEditableTable(rows, locked) {
     passRadio.value = 'pass';
     passRadio.checked = (data.status || 'pass') === 'pass';
     passRadio.disabled = locked;
+    passRadio.dataset.field = 'pass';
     tdPass.appendChild(passRadio);
 
     const tdFail = document.createElement('td');
@@ -441,6 +472,7 @@ function buildEditableTable(rows, locked) {
     failRadio.value = 'fail';
     failRadio.checked = (data.status || 'pass') === 'fail';
     failRadio.disabled = locked;
+    failRadio.dataset.field = 'fail';
     tdFail.appendChild(failRadio);
 
     const tdOther = document.createElement('td');
@@ -448,6 +480,7 @@ function buildEditableTable(rows, locked) {
     inputOther.type = 'text';
     inputOther.value = data.reason || '';
     inputOther.disabled = locked;
+    inputOther.dataset.field = 'reason';
     tdOther.appendChild(inputOther);
 
     const tdAction = document.createElement('td');
@@ -465,7 +498,6 @@ function buildEditableTable(rows, locked) {
     }
 
     tr.appendChild(tdItem);
-    tr.appendChild(tdResult);
     tr.appendChild(tdPass);
     tr.appendChild(tdFail);
     tr.appendChild(tdOther);
@@ -495,13 +527,15 @@ function buildEditableTable(rows, locked) {
 
   wrap.getRows = () => {
     return [...tbody.querySelectorAll('tr[data-row]')].map((tr) => {
-      const inputs = tr.querySelectorAll('input');
-      const item = inputs[0]?.value?.trim() || '';
-      const result = inputs[1]?.value?.trim() || '';
-      const passChecked = inputs[2]?.checked;
-      const failChecked = inputs[3]?.checked;
+      const itemInput = tr.querySelector('input[data-field="item"]');
+      const resultInput = tr.querySelector('input[data-field="result"]');
+      const passChecked = tr.querySelector('input[data-field="pass"]')?.checked;
+      const failChecked = tr.querySelector('input[data-field="fail"]')?.checked;
+      const reasonInput = tr.querySelector('input[data-field="reason"]');
+      const item = itemInput?.value?.trim() || '';
+      const result = resultInput?.value?.trim() || '';
       const status = failChecked ? 'fail' : 'pass';
-      const reason = inputs[4]?.value?.trim() || '';
+      const reason = reasonInput?.value?.trim() || '';
       return { item, result, status, reason };
     }).filter((row) => row.item || row.result || row.reason);
   };
@@ -522,21 +556,43 @@ function createRegionEditor(overlayEl, countEl) {
     startY: 0,
     activeBox: null,
     regions: [],
+    pointerId: null,
   };
+  let scrollProvider = null;
+
+  function getScrollState() {
+    if (!scrollProvider) return null;
+    try {
+      return scrollProvider();
+    } catch (err) {
+      return null;
+    }
+  }
 
   function updateCount() {
     if (countEl) countEl.textContent = `Regions: ${state.regions.length}`;
   }
 
   function renderRegions() {
+    const scrollState = getScrollState();
     overlayEl.querySelectorAll('.selection-box').forEach((n) => n.remove());
     state.regions.forEach((r) => {
+      let left = r.x;
+      let top = r.y;
+      let width = r.width;
+      let height = r.height;
+      if (scrollState && r.space === 'scroll') {
+        const baseW = scrollState.clientWidth || 1;
+        const baseH = scrollState.clientHeight || 1;
+        left = r.x - (scrollState.scrollLeft - (r.scrollLeft || 0)) / baseW;
+        top = r.y - (scrollState.scrollTop - (r.scrollTop || 0)) / baseH;
+      }
       const node = document.createElement('div');
       node.className = 'selection-box';
-      node.style.left = `${r.x * 100}%`;
-      node.style.top = `${r.y * 100}%`;
-      node.style.width = `${r.width * 100}%`;
-      node.style.height = `${r.height * 100}%`;
+      node.style.left = `${left * 100}%`;
+      node.style.top = `${top * 100}%`;
+      node.style.width = `${width * 100}%`;
+      node.style.height = `${height * 100}%`;
       overlayEl.appendChild(node);
     });
     updateCount();
@@ -550,23 +606,42 @@ function createRegionEditor(overlayEl, countEl) {
     const y = clamp01((boxRect.top - rect.top) / rect.height);
     const width = clamp01(boxRect.width / rect.width);
     const height = clamp01(boxRect.height / rect.height);
+    const scrollState = getScrollState();
     state.activeBox.remove();
     state.activeBox = null;
     if (width < 0.01 || height < 0.01) {
       renderRegions();
       return;
     }
-    state.regions.push({
-      x: Number(x.toFixed(6)),
-      y: Number(y.toFixed(6)),
-      width: Number(width.toFixed(6)),
-      height: Number(height.toFixed(6)),
-    });
+    if (scrollState) {
+      state.regions.push({
+        x: Number(x.toFixed(6)),
+        y: Number(y.toFixed(6)),
+        width: Number(width.toFixed(6)),
+        height: Number(height.toFixed(6)),
+        scrollTop: Number((scrollState.scrollTop || 0).toFixed(2)),
+        scrollLeft: Number((scrollState.scrollLeft || 0).toFixed(2)),
+        space: 'scroll',
+      });
+    } else {
+      state.regions.push({
+        x: Number(x.toFixed(6)),
+        y: Number(y.toFixed(6)),
+        width: Number(width.toFixed(6)),
+        height: Number(height.toFixed(6)),
+      });
+    }
     renderRegions();
   }
 
-  overlayEl.addEventListener('mousedown', (e) => {
+  overlayEl.addEventListener('pointerdown', (e) => {
     if (!state.drawEnabled) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    try {
+      overlayEl.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    state.pointerId = e.pointerId;
     const rect = overlayEl.getBoundingClientRect();
     state.isDrawing = true;
     state.startX = e.clientX - rect.left;
@@ -581,8 +656,10 @@ function createRegionEditor(overlayEl, countEl) {
     state.activeBox = node;
   });
 
-  overlayEl.addEventListener('mousemove', (e) => {
+  overlayEl.addEventListener('pointermove', (e) => {
     if (!state.isDrawing || !state.activeBox) return;
+    if (state.pointerId !== null && e.pointerId !== state.pointerId) return;
+    e.preventDefault();
     const rect = overlayEl.getBoundingClientRect();
     const curX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
     const curY = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
@@ -596,19 +673,38 @@ function createRegionEditor(overlayEl, countEl) {
     state.activeBox.style.height = `${height}px`;
   });
 
-  const finishHandler = () => {
+  const finishHandler = (e) => {
     if (!state.isDrawing) return;
+    if (state.pointerId !== null && e && e.pointerId !== state.pointerId) return;
     state.isDrawing = false;
+    if (state.pointerId !== null && e) {
+      try {
+        overlayEl.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+    state.pointerId = null;
     finishDrawing();
   };
-  overlayEl.addEventListener('mouseup', finishHandler);
-  overlayEl.addEventListener('mouseleave', finishHandler);
+  overlayEl.addEventListener('pointerup', finishHandler);
+  overlayEl.addEventListener('pointercancel', finishHandler);
+  overlayEl.addEventListener('lostpointercapture', finishHandler);
+  overlayEl.addEventListener('wheel', (e) => {
+    if (!state.drawEnabled) return;
+    e.preventDefault();
+  }, { passive: false });
 
   return {
     setDrawEnabled(enabled) {
       state.drawEnabled = !!enabled;
       overlayEl.classList.toggle('draw-enabled', state.drawEnabled);
       overlayEl.classList.toggle('draw-disabled', !state.drawEnabled);
+    },
+    setScrollProvider(provider) {
+      scrollProvider = typeof provider === 'function' ? provider : null;
+      renderRegions();
+    },
+    refresh() {
+      renderRegions();
     },
     undoLast() {
       if (state.regions.length > 0) {
@@ -621,7 +717,12 @@ function createRegionEditor(overlayEl, countEl) {
       renderRegions();
     },
     getRegions() {
-      return state.regions.slice();
+      return state.regions.map((r) => ({
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+      }));
     },
   };
 }
@@ -659,25 +760,100 @@ function renderDetail(host, rec, source) {
   toolRow.appendChild(boxCount);
 
   const stage = el('div', 'pdf-stage');
-  const pdf = document.createElement('iframe');
-  pdf.className = 'pdf-viewer';
+  const pdf = el('div', 'pdf-viewer');
+  const canvasWrap = el('div', 'pdf-canvas-wrap');
   const overlay = el('div', 'pdf-overlay');
+  canvasWrap.appendChild(overlay);
+  pdf.appendChild(canvasWrap);
   stage.appendChild(pdf);
-  stage.appendChild(overlay);
-
-  if (rec.pdf_path) {
-    pdf.src = `${API_BASE}/${String(rec.pdf_path).replace(/^\//, '')}`;
-  }
   pdfWrap.appendChild(pdfTitle);
   pdfWrap.appendChild(toolRow);
   pdfWrap.appendChild(stage);
 
   const editor = createRegionEditor(overlay, boxCount);
   let drawEnabled = false;
-  editor.setDrawEnabled(drawEnabled);
+  const applyDrawState = (enabled) => {
+    editor.setDrawEnabled(enabled);
+    pdf.classList.toggle('marking-disabled', enabled);
+  };
+  applyDrawState(drawEnabled);
+  let pdfDoc = null;
+  let renderSeq = 0;
+
+  function ensurePdfJs() {
+    if (window.pdfjsLib) return window.pdfjsLib;
+    return null;
+  }
+
+  async function renderPdfDocument() {
+    if (!rec.pdf_path) return;
+    const pdfjsLib = ensurePdfJs();
+    if (!pdfjsLib) {
+      canvasWrap.textContent = 'PDF.js not loaded.';
+      return;
+    }
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.js';
+    }
+    const url = `${API_BASE}/${String(rec.pdf_path).replace(/^\//, '')}`;
+    try {
+      const loadingTask = pdfjsLib.getDocument({ url, withCredentials: true });
+      pdfDoc = await loadingTask.promise;
+      await renderAllPages();
+      editor.refresh();
+    } catch (err) {
+      canvasWrap.textContent = err?.message || 'PDF load failed.';
+    }
+  }
+
+  async function renderAllPages() {
+    if (!pdfDoc) return;
+    const seq = ++renderSeq;
+    while (canvasWrap.firstChild) {
+      canvasWrap.removeChild(canvasWrap.firstChild);
+    }
+    canvasWrap.appendChild(overlay);
+    const firstPage = await pdfDoc.getPage(1);
+    const unscaled = firstPage.getViewport({ scale: 1 });
+    const containerWidth = Math.max(1, pdf.clientWidth - 2);
+    const scale = Math.max(0.1, Math.min(4, containerWidth / unscaled.width));
+    const outputScale = window.devicePixelRatio || 1;
+    let maxWidth = 0;
+    for (let i = 1; i <= pdfDoc.numPages; i += 1) {
+      if (seq !== renderSeq) return;
+      const page = await pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.className = 'pdf-page-canvas';
+      const ctx = canvas.getContext('2d');
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+      ctx.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      canvasWrap.insertBefore(canvas, overlay);
+      maxWidth = Math.max(maxWidth, viewport.width);
+    }
+    canvasWrap.style.width = `${maxWidth}px`;
+  }
+
+  const debouncedResize = (() => {
+    let t = null;
+    return () => {
+      if (!pdfDoc) return;
+      if (t) clearTimeout(t);
+      t = setTimeout(() => {
+        renderAllPages();
+      }, 200);
+    };
+  })();
+  window.addEventListener('resize', debouncedResize);
+
+  renderPdfDocument();
   btnToggleDraw.addEventListener('click', () => {
     drawEnabled = !drawEnabled;
-    editor.setDrawEnabled(drawEnabled);
+    applyDrawState(drawEnabled);
     btnToggleDraw.textContent = drawEnabled ? 'Marking: On' : 'Marking: Off';
   });
   btnUndo.addEventListener('click', () => editor.undoLast());

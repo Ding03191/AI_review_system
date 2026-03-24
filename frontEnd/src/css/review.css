@@ -568,16 +568,36 @@ textarea{min-height:96px;
   border:1px solid var(--border);
   border-radius:12px;
   background:#fff;
+  overflow:auto;
+  position:relative;
+}
+.pdf-viewer.marking-disabled{
+  overflow:hidden;
+}
+.pdf-canvas-wrap{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:12px 0;
+  margin:0 auto;
+  width:max-content;
+  max-width:100%;
+}
+.pdf-page-canvas{
+  display:block;
 }
 .pdf-overlay{
   position:absolute;
   inset:0;
-  border-radius:12px;
+  border-radius:0;
   pointer-events:none;
 }
 .pdf-overlay.draw-enabled{
   pointer-events:auto;
   cursor:crosshair;
+  touch-action:none;
+  user-select:none;
 }
 .pdf-overlay.draw-disabled{
   cursor:default;
@@ -763,7 +783,7 @@ textarea{min-height:96px;
 .login-error{ color: var(--danger); font-size: 14px; min-height: 18px; }
 
 /* submit loading 狀態 */
-button[data-loading="true"]{ position:relative; color: transparent; }
+button[data-loading="true"]{ position:relative; color: transparent !important; text-shadow:none !important; }
 button[data-loading="true"]::after{
   content:'\767b\5165\4e2d\2026'; color:#fff; position:absolute; inset:0;
   display:grid; place-items:center;
@@ -1096,7 +1116,7 @@ body{
 .table-actions{display:flex;justify-content:flex-end;margin-top:8px}
 .divider{height:1px;background:#e5e7eb;margin:16px 0}
 /* Auth simple layout */
-.auth-page{background:#f5f7fb;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Noto Sans',sans-serif}
+.auth-page{background:#f5f7fb;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC","Noto Sans CJK TC",sans-serif;line-height:1.5}
 .auth-wrap{width:100%;max-width:420px;padding:32px 20px;display:flex;flex-direction:column;gap:18px;align-items:center}
 .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .logo-mark{width:22px;height:22px;background:#111;border-radius:4px;transform:rotate(45deg)}
@@ -1107,6 +1127,7 @@ body{
 .auth-field label{font-size:13px;color:#374151}
 .auth-field input{height:36px;border:1px solid #d1d5db;border-radius:4px;padding:0 10px}
 .auth-check{display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280}
+.auth-check input{width:auto;height:auto;margin:0}
 .auth-error{min-height:18px;color:#dc2626;font-size:12px}
 .auth-foot{font-size:12px;color:#6b7280;text-align:center}
 .auth-footer{position:fixed;bottom:16px;font-size:11px;color:#9ca3af}

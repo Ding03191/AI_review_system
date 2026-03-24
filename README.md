@@ -35,8 +35,8 @@ image/          README 圖片
 docker compose up --build
 ```
 
-- Backend: http://localhost:5000
-- Frontend: http://localhost:8080
+- Backend: http://localhost:5002
+- Frontend: http://localhost:8082
 
 ### 方式 2：本機開發（Windows）
 

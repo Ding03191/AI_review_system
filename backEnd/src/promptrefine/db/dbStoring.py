@@ -719,7 +719,6 @@ def fetch_labeled_records(limit: int = 50, offset: int = 0):
     }
 
 
-
 # 4. 取回一筆「尚未被標記」的 history 記錄
 def get_next_unlabeled_history():
     conn = _connect()

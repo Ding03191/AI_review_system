@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="api-base" content="http://127.0.0.1:5000">
+  <meta name="api-base" content="http://127.0.0.1:5002">
   <title>Login | System</title>
   <link rel="stylesheet" href="../src/css/review.css">
 </head>
@@ -18,22 +18,22 @@
     <section class="auth-card-simple">
       <button class="btn ghost full" type="button" id="btnGoogleLogin">Sign in with Google</button>
 
-      <div class="auth-field">
-        <label>Student ID</label>
-        <input form="formLogin" type="text" name="studentId" required>
-      </div>
-      <div class="auth-field">
-        <label>Password</label>
-        <input form="formLogin" id="loginPwd" type="password" name="password" minlength="6" required>
-      </div>
-
-      <label class="auth-check">
-        <input type="checkbox" form="formLogin"> Keep me signed in
-      </label>
-
-      <div id="loginError" class="auth-error"></div>
-
       <form id="formLogin">
+        <div class="auth-field">
+          <label>Student ID</label>
+          <input type="text" name="studentId" required>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input id="loginPwd" type="password" name="password" minlength="6" required>
+        </div>
+
+        <label class="auth-check">
+          <input type="checkbox"> Keep me signed in
+        </label>
+
+        <div id="loginError" class="auth-error"></div>
+
         <button type="submit" class="btn primary full">Login</button>
       </form>
 
@@ -43,7 +43,7 @@
     </section>
   </main>
 
-  <footer class="auth-footer">Copyright ? 2026</footer>
+  <footer class="auth-footer">Copyright 2026</footer>
 
   <script src="../src/js/auth.js"></script>
 </body>

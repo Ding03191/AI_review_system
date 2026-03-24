@@ -10,9 +10,7 @@ function resolveApiBase() {
       return url.origin.replace(/\/+$/, '');
     }
   } catch (e) {}
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  const host = location.hostname || '127.0.0.1';
-  return `${proto}//${host}:5000`;
+  return "";
 }
 
 const LAYOUT_API_BASE = resolveApiBase();

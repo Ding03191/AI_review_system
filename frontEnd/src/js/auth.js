@@ -11,9 +11,7 @@ function resolveApiBase() {
       return url.origin.replace(/\/+$/, '');
     }
   } catch (e) {}
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  const host = location.hostname || '127.0.0.1';
-  return `${proto}//${host}:5000`;
+  return "";
 }
 
 const API_BASE = resolveApiBase();
@@ -30,7 +28,12 @@ async function apiLogin(studentId, password) {
   } catch (err) {
     throw new Error('無法連線到後端服務，請確認後端已啟動');
   }
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch (err) {
+    throw new Error('?????????');
+  }
   if (!data.ok) throw new Error(data.error || 'Login failed');
   try {
     localStorage.setItem('user', JSON.stringify(data.data.user || {}));
@@ -46,7 +49,12 @@ async function apiRegister(name, studentId, password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, studentId, password }),
   });
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch (err) {
+    throw new Error('?????????');
+  }
   if (!data.ok) throw new Error(data.error || 'Register failed');
   return data.data || {};
 }

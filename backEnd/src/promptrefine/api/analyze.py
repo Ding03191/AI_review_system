@@ -1,5 +1,6 @@
 import json
 import os
+from zoneinfo import ZoneInfo
 import re
 from datetime import datetime
 
@@ -588,6 +589,41 @@ def _analyze_with_ai(pdf_text, form_data):
                 }
             )
 
+    def _t(value):
+        if value is None:
+            return ""
+        return str(value).strip()
+
+    def _is_blank(value):
+        text = _t(value)
+        return not text or text in {"-", "null", "undefined"}
+
+    def _is_marked(value):
+        text = _t(value).lower()
+        return text in {"○", "◯", "o", "yes", "y", "true", "1", "pass", "passed", "符合", "是"}
+
+    def _is_false_mark(value):
+        text = _t(value).lower()
+        return text in {"否", "no", "n", "false", "0"}
+
+    def _is_missing(value):
+        return "未抓取到這個項目" in _t(value)
+
+    def _row_failed(row):
+        pass_text = _t(row.get("pass"))
+        fail_text = _t(row.get("fail"))
+        other_text = _t(row.get("other"))
+        if _is_marked(pass_text):
+            return False
+        if _is_missing(fail_text) or _is_missing(other_text):
+            return True
+        if not _is_blank(fail_text) and not _is_false_mark(fail_text):
+            return True
+        return False
+
+    if table_rows and any(_row_failed(row) for row in table_rows):
+        is_passed = False
+
     return {
         "isPassed": bool(is_passed),
         "aiFeedback": feedback,
@@ -611,7 +647,7 @@ def analyze_application():
     saved_file_path = os.path.join(_ATTACHMENTS_DIR, safe_name)
     uploaded_file.save(saved_file_path)
 
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Taipei"))
     apply_date = now.strftime("%Y-%m-%d")
     apply_time = now.strftime("%H:%M")
 

@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: review-backend
     ports:
-      - "5000:5000"
+      - "5002:5000"
     env_file:
       - .env
     user: "0:0"
@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile
     container_name: review-frontEnd
     ports:
-      - "8080:80"
+      - "8082:80"
     volumes:
       - ./frontEnd/public:/usr/share/nginx/html
       - ./frontEnd/src:/usr/share/nginx/html/src
