@@ -159,6 +159,35 @@ def _answer_with_ai(question: str, records: list, summary: dict):
 
 
 @core_bp.route("/api/history/ask", methods=["POST"])
+
+@core_bp.route("/api/history/confirm", methods=["POST"])
+def history_confirm():
+    role = session.get("role")
+    if not role or role != "applicant":
+        return jsonify({"error": "Permission denied."}), 403
+
+    payload = request.get_json(silent=True) or {}
+    applicant_stdn = (payload.get("applicantStdn") or payload.get("studentId") or "").strip()
+    applicant_no = payload.get("applicantNo")
+
+    if not applicant_stdn or applicant_no is None:
+        return jsonify({"error": "Missing applicantStdn or applicantNo."}), 400
+
+    applicant_no_value = int(applicant_no) if str(applicant_no).isdigit() else applicant_no
+    record = db.get_history_record(applicant_stdn, applicant_no_value)
+    if not record:
+        return jsonify({"error": "Record not found."}), 404
+    if record.get("isConfirmed"):
+        return jsonify({"error": "Record already confirmed."}), 409
+
+    confirmed = db.get_confirmed_record(applicant_stdn)
+    if confirmed and confirmed.get("applicantNo") != applicant_no_value:
+        return jsonify({"error": "Another record is already confirmed."}), 409
+
+    db.confirm_history_record(applicant_stdn, applicant_no_value)
+    updated = db.get_history_record(applicant_stdn, applicant_no_value)
+    return jsonify(updated), 200
+
 def history_ask():
     payload = request.get_json(silent=True) or {}
     question = (payload.get("question") or "").strip()
@@ -246,7 +275,7 @@ def labeling_export_excel():
     guard = _require_teacher()
     if guard:
         return guard
-    results = db.search_records({}, limit=100000, offset=0)
+    results = db.search_records({"is_confirmed": True}, limit=100000, offset=0)
     records = results.get("records", [])
 
     wb = Workbook()

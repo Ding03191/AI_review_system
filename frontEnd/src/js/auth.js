@@ -26,7 +26,7 @@ async function apiLogin(studentId, password) {
       body: JSON.stringify({ studentId, password }),
     });
   } catch (err) {
-    throw new Error('無法連線到後端服務，請確認後端已啟動');
+    throw new Error('??????????????????');
   }
   let data;
   try {
@@ -34,7 +34,7 @@ async function apiLogin(studentId, password) {
   } catch (err) {
     throw new Error('?????????');
   }
-  if (!data.ok) throw new Error(data.error || 'Login failed');
+  if (!data.ok) throw new Error(data.error || '????');
   try {
     localStorage.setItem('user', JSON.stringify(data.data.user || {}));
     if (data.data.user?.studentId) localStorage.setItem('studentId', data.data.user.studentId);
@@ -55,7 +55,7 @@ async function apiRegister(name, studentId, password) {
   } catch (err) {
     throw new Error('?????????');
   }
-  if (!data.ok) throw new Error(data.error || 'Register failed');
+  if (!data.ok) throw new Error(data.error || '????');
   return data.data || {};
 }
 
@@ -85,7 +85,7 @@ function initLogin() {
       await apiLogin(studentId, pwd);
       location.href = 'review.html';
     } catch (ex) {
-      err.textContent = ex.message || 'Login failed';
+      err.textContent = ex.message || '????';
     } finally {
       btn.disabled = false;
       btn.dataset.loading = '';
@@ -108,12 +108,12 @@ function initRegister() {
     btn.disabled = true;
     btn.dataset.loading = 'true';
     try {
-      if (!studentId) throw new Error('Student ID required');
-      if ((pwd || '').length < 6) throw new Error('Password must be 6+ chars');
+      if (!studentId) throw new Error('?????');
+      if ((pwd || '').length < 6) throw new Error('???? 6 ?');
       await apiRegister(name, studentId, pwd);
       location.href = 'login.html';
     } catch (ex) {
-      err.textContent = ex.message || 'Register failed';
+      err.textContent = ex.message || '????';
     } finally {
       btn.disabled = false;
       btn.dataset.loading = '';

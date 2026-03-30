@@ -86,7 +86,7 @@ function inferFieldKey(...parts) {
   return '';
 }
 
-function extractNameValue(...parts) {
+function extract??Value(...parts) {
   const joined = parts.map(textOf).join('\n');
   const matches = [...joined.matchAll(/([\u4e00-\u9fff]{2,4})/g)].map((match) => match[1]);
   return matches.find((value) => !['\u4e2d\u6587\u59d3\u540d', '\u7533\u8acb\u4eba\u59d3\u540d', '\u8b49\u66f8\u59d3\u540d', '\u59d3\u540d'].includes(value)) || '';
@@ -171,9 +171,9 @@ function expandPackedRows(rawRows) {
 
   rows.forEach((row) => {
     const itemText = pickFirst(row, ['item', 'Item', '', '']);
-    const resultText = pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM?', '']);
+    const resultText = pickFirst(row, ['result', '辨識結果', 'LLM 辨識結果', 'LLM辨識結果', '']);
     const passText = pickFirst(row, ['pass', 'Pass', '', 'isPass', 'isPassed']) || '-';
-    const failText = pickFirst(row, ['fail', 'Fail', '?']) || '-';
+    const failText = pickFirst(row, ['fail', 'Fail', '不符合']) || '-';
     const otherText = pickFirst(row, ['other', 'Other', '', '']) || '-';
 
     const itemParts = itemText.split(/[|]/).map((part) => part.trim()).filter(Boolean);
@@ -228,7 +228,7 @@ function mergeUniqueText(existing, incoming) {
 
 function resolveFieldValue(fieldKey, resultText, itemText, context = {}) {
   if (isMissingItem(resultText) || hasMissingItemText(itemText)) return '';
-  if (fieldKey === 'name') return extractNameValue(resultText, itemText) || textOf(resultText) || textOf(context.applicantName);
+  if (fieldKey === 'name') return extract??Value(resultText, itemText) || textOf(resultText) || textOf(context.applicant??);
   if (fieldKey === 'course') {
     const extracted = extractCourseValues(resultText, itemText).join('\n');
     return extracted || (isMissingItem(resultText) ? '' : textOf(resultText));
@@ -263,7 +263,7 @@ function mergeEntry(existing, incoming, fieldKey) {
   };
 }
 
-function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
+function build??Bucket(rawRows, feedbackText, context = {}) {
   const rows = expandPackedRows(rawRows);
   const bucket = Object.fromEntries(FIELD_ORDER.map((fieldKey) => [fieldKey, null]));
 
@@ -291,9 +291,9 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
   rows.forEach((row) => {
     ingest(
       pickFirst(row, ['item', 'Item', '\u9805\u76ee', '\u8fa8\u8b58\u9805\u76ee']),
-      pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM\u8fa8\u8b58\u5230\u7d50\u679c', '\u8fa8\u8b58\u7d50\u679c']),
+    const resultText = pickFirst(row, ['result', '辨識結果', 'LLM 辨識結果', 'LLM辨識結果', '']);
       pickFirst(row, ['pass', 'Pass', '\u7b26\u5408', 'isPass', 'isPassed']),
-      pickFirst(row, ['fail', 'Fail', '\u4e0d\u7b26\u5408']),
+    const failText = pickFirst(row, ['fail', 'Fail', '不符合']) || '-';
       pickFirst(row, ['other', 'Other', '\u5176\u5b83', '\u5176\u4ed6']),
       pickFirst(row, ['reason', 'Reason', '\u539f\u56e0', 'note', 'description'])
     );
@@ -305,7 +305,7 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
       const related = lines.filter((line) => FIELD_META[fieldKey].keywords.some((keyword) => line.includes(keyword)));
       if (!related.length || bucket[fieldKey]) return;
       let value = '';
-      if (fieldKey === 'name') value = extractNameValue(...related) || textOf(context.applicantName);
+      if (fieldKey === 'name') value = extract??Value(...related) || textOf(context.applicant??);
       if (fieldKey === 'course') value = extractCourseValues(...related).join('\n');
       if (fieldKey === 'period') value = extractGenericValue('period', ...related);
       if (fieldKey === 'exam') value = extractGenericValue('exam', ...related);
@@ -319,61 +319,135 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
     });
   }
 
-  return (() => {
-    const output = [];
+  return bucket;
+}
 
-    FIELD_ORDER.forEach((fieldKey) => {
-      const entry = bucket[fieldKey];
-      const label = FIELD_META[fieldKey].label;
+function getCourseListFromBucket(bucket) {
+  const base = splitLines(bucket?.course?.value || '');
+  if (base.some((line) => /--- Page \d+ ---/.test(line))) {
+    const groups = [];
+    let buffer = [];
+    base.forEach((line) => {
+      if (/--- Page \d+ ---/.test(line)) {
+        if (buffer.length) {
+          groups.push(buffer.join('\n'));
+          buffer = [];
+        }
+        return;
+      }
+      buffer.push(line);
+    });
+    if (buffer.length) groups.push(buffer.join('\n'));
+    return groups.length ? groups : base;
+  }
+  if (base.length !== 1) return base;
+  const single = base[0] || '';
+  if (!single) return base;
+  if (/--- Page \\d+ ---/.test(single)) {
+    const parts = single
+      .split(/--- Page \\d+ ---/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return parts.length ? parts : base;
+  }
+  if (single.includes('課程1') || single.includes('課程2')) return base;
+  const pieces = single.split(/[、,，/／•・]/).map((part) => part.trim()).filter(Boolean);
+  return pieces.length > 1 ? pieces : base;
+}
 
-      if (!entry) {
+function splitCourseValues(value, courseCount) {
+  const lines = splitLines(value);
+  if (!courseCount || courseCount <= 1) return lines.length ? [lines.join('\n')] : [''];
+  const indexed = Array(courseCount).fill('');
+  let matched = false;
+  lines.forEach((line) => {
+    const match = line.match(/^\u8ab2\u7a0b\s*(\d+)\s*[:\uff1a]\s*(.+)$/);
+    if (!match) return;
+    const idx = Number.parseInt(match[1], 10) - 1;
+    if (Number.isNaN(idx) || idx < 0 || idx >= courseCount) return;
+    indexed[idx] = match[2].trim();
+    matched = true;
+  });
+  if (matched) return indexed;
+  if (lines.length >= courseCount) return lines.slice(0, courseCount);
+  return Array(courseCount).fill(lines.join('\n'));
+}
+
+function buildRowsFromBucket(bucket, options = {}) {
+  const output = [];
+  const courseIndex = Number.isInteger(options.courseIndex) ? options.courseIndex : null;
+  const courseList = getCourseListFromBucket(bucket);
+  const courseCount = courseList.length;
+
+  FIELD_ORDER.forEach((fieldKey) => {
+    const entry = bucket[fieldKey];
+    const label = FIELD_META[fieldKey].label;
+
+    if (!entry) {
+      output.push({
+        [COL_ITEM]: `${label}：${DISPLAY_MISSING_TEXT}`,
+        [COL_PASS]: '-',
+        [COL_FAIL]: DISPLAY_MISSING_TEXT,
+        [COL_OTHER]: '-',
+      });
+      return;
+    }
+
+    if (fieldKey === 'course') {
+      if (courseIndex !== null) {
+        const course?? = courseList[courseIndex] || '';
         output.push({
-          [COL_ITEM]: `${label}：${DISPLAY_MISSING_TEXT}`,
-          [COL_PASS]: '-',
-          [COL_FAIL]: DISPLAY_MISSING_TEXT,
+          [COL_ITEM]: `課程${courseIndex + 1}：${course?? || DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: course?? ? '○' : '-',
+          [COL_FAIL]: course?? ? '-' : (entry.note || DISPLAY_MISSING_TEXT),
           [COL_OTHER]: '-',
         });
         return;
       }
 
-      if (fieldKey === 'course') {
-        const courses = (entry.value || '')
-          .split('\n')
-          .map((v) => v.trim())
-          .filter(Boolean);
-
-        if (courses.length) {
-          courses.forEach((course, index) => {
-            output.push({
-              [COL_ITEM]: `課程${index + 1}：${course}`,
-              [COL_PASS]: entry.status === 'pass' ? '○' : '-',
-              [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
-              [COL_OTHER]: '-',
-            });
-          });
-        } else {
+      if (courseList.length) {
+        courseList.forEach((course, index) => {
           output.push({
-            [COL_ITEM]: `課程1：${DISPLAY_MISSING_TEXT}`,
-            [COL_PASS]: '-',
-            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+            [COL_ITEM]: `課程${index + 1}：${course}`,
+            [COL_PASS]: entry.status === 'pass' ? '○' : '-',
+            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
             [COL_OTHER]: '-',
           });
-        }
-        return;
+        });
+      } else {
+        output.push({
+          [COL_ITEM]: `課程1：${DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: '-',
+          [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+          [COL_OTHER]: '-',
+        });
       }
+      return;
+    }
 
-      const itemText = entry.value ? `${label}：${entry.value}` : `${label}：${DISPLAY_MISSING_TEXT}`;
+    let value = entry.value || '';
+    if (courseIndex !== null && courseCount > 1) {
+      const perCourseValues = splitCourseValues(value, courseCount);
+      value = perCourseValues[courseIndex] || '';
+    }
+    const itemText = value ? `${label}：${value}` : `${label}：${DISPLAY_MISSING_TEXT}`;
+    const rowPass = value ? '○' : '-';
+    const rowFail = value ? '-' : (entry.note || DISPLAY_MISSING_TEXT);
 
-      output.push({
-        [COL_ITEM]: itemText,
-        [COL_PASS]: entry.status === 'pass' ? '○' : '-',
-        [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
-        [COL_OTHER]: '-',
-      });
+    output.push({
+      [COL_ITEM]: itemText,
+      [COL_PASS]: courseIndex !== null && courseCount > 1 ? rowPass : (entry.status === 'pass' ? '○' : '-'),
+      [COL_FAIL]: courseIndex !== null && courseCount > 1 ? rowFail : (entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-'),
+      [COL_OTHER]: '-',
     });
+  });
 
-    return output;
-  })();
+  return output;
+}
+
+function normalize??Rows(rawRows, feedbackText, context = {}, options = {}) {
+  const bucket = build??Bucket(rawRows, feedbackText, context);
+  return buildRowsFromBucket(bucket, options);
 }
 
 function resolveElements() {
@@ -381,15 +455,14 @@ function resolveElements() {
   if (!resultEl) resultEl = document.getElementById('reviewResult');
 }
 
-function formatReviewStatus(status) {
+function format??Status(status) {
   return STATUS_LABELS[status] || STATUS_LABELS.reviewing;
 }
 
-function renderFeedbackTable(rows, feedbackText, context = {}) {
-  const data = normalizeFeedbackRows(rows, feedbackText, context);
+function build??TableElement(dataRows) {
   const headers = [COL_ITEM, COL_PASS, COL_FAIL, COL_OTHER];
   const table = document.createElement('table');
-  table.className = 'ai-feedback-table';
+  table.class?? = 'ai-feedback-table';
 
   const thead = document.createElement('thead');
   const trh = document.createElement('tr');
@@ -401,7 +474,7 @@ function renderFeedbackTable(rows, feedbackText, context = {}) {
   thead.appendChild(trh);
 
   const tbody = document.createElement('tbody');
-  data.forEach((row) => {
+  dataRows.forEach((row) => {
     const tr = document.createElement('tr');
     headers.forEach((header) => {
       const td = document.createElement('td');
@@ -419,33 +492,59 @@ function renderFeedbackTable(rows, feedbackText, context = {}) {
   return table;
 }
 
-function renderResult(data) {
+function render??Table(rows, feedbackText, context = {}) {
+  const bucket = build??Bucket(rows, feedbackText, context);
+  const courseList = getCourseListFromBucket(bucket);
+  const courseCount = courseList.length;
+  if (courseCount > 1) {
+    const wrap = document.createElement('div');
+    wrap.class?? = 'table-wrap';
+    courseList.forEach((course??, index) => {
+      const label = document.createElement('div');
+      label.class?? = 'review-label';
+      label.textContent = `\u8ab2\u7a0b${index + 1}\uff1a${course?? || DISPLAY_MISSING_TEXT}`;
+      wrap.appendChild(label);
+      wrap.appendChild(build??TableElement(buildRowsFromBucket(bucket, { courseIndex: index })));
+    });
+    return wrap;
+  }
+
+  return build??TableElement(buildRowsFromBucket(bucket));
+}
+
+function render????(data) {
   resolveElements();
   if (!resultEl) return;
   resultEl.innerHTML = '';
+  if (form && data?.applicantNo) {
+    const caseInput = form.querySelector('input[name="caseNo"]');
+    if (caseInput && !caseInput.value) {
+      caseInput.value = String(data.applicantNo);
+    }
+  }
 
   const aiPassed = Boolean(data?.isPassed);
   const reviewStatus = data?.reviewStatus || 'submitted';
   const finalPassed = data?.finalIsPassed;
-  const feedbackText = data?.finalFeedback || data?.aiFeedback || 'No feedback yet.';
-  const tableRows = Array.isArray(data?.finalFeedbackTable) && data.finalFeedbackTable.length ? data.finalFeedbackTable : data?.aiFeedbackTable;
+    const feedbackText = data?.final?? || data?.ai?? || '尚未產生結果';
+  const tableRows = Array.isArray(data?.final??Table) && data.final??Table.length ? data.final??Table : data?.ai??Table;
 
   const wrap = document.createElement('div');
-  wrap.className = 'review-result fbx';
+  wrap.class?? = 'review-result fbx';
 
   const header = document.createElement('div');
-  header.className = 'fbx-hd';
+  header.class?? = 'fbx-hd';
 
   const statusPill = document.createElement('span');
-  statusPill.className = 'pill neutral';
-  statusPill.textContent = formatReviewStatus(reviewStatus);
+  statusPill.class?? = 'pill neutral';
+  statusPill.textContent = format??Status(reviewStatus);
 
   const aiPill = document.createElement('span');
-  aiPill.className = `pill ${aiPassed ? 'ok' : 'ng'}`;
+  aiPill.class?? = `pill ${aiPassed ? 'ok' : 'ng'}`;
   aiPill.textContent = aiPassed ? 'AI \u5224\u5b9a\uff1a\u901a\u904e' : 'AI \u5224\u5b9a\uff1a\u672a\u901a\u904e';
 
   const title = document.createElement('div');
-  title.className = 'review-label';
+  title.class?? = 'review-label';
   title.textContent = '\u5be9\u6838\u7d50\u679c';
 
   header.appendChild(statusPill);
@@ -453,26 +552,26 @@ function renderResult(data) {
   header.appendChild(title);
 
   const summary = document.createElement('div');
-  summary.className = 'fbx-summary';
+  summary.class?? = 'fbx-summary';
   summary.textContent = feedbackText;
 
   const kv = document.createElement('div');
-  kv.className = 'kv';
+  kv.class?? = 'kv';
   const addKV = (key, value) => {
     const keyEl = document.createElement('div');
-    keyEl.className = 'k';
+    keyEl.class?? = 'k';
     keyEl.textContent = key;
     const valueEl = document.createElement('div');
-    valueEl.className = 'v';
+    valueEl.class?? = 'v';
     valueEl.textContent = value || '-';
     kv.appendChild(keyEl);
     kv.appendChild(valueEl);
   };
 
-  addKV('\u7533\u8acb\u4eba', data?.applicantName || '-');
+  addKV('\u7533\u8acb\u4eba', data?.applicant?? || '-');
   addKV('\u5b78\u865f', data?.applicantStdn || data?.studentId || '-');
   addKV('\u7533\u8acb\u65e5\u671f', data?.applyDate || '-');
-  addKV('\u7533\u8acb\u6642\u9593', data?.applyTime || '-');
+  addKV('\u7533\u8acb\u6642\u9593', data?.apply?? || '-');
   addKV(
     '\u6559\u5e2b\u5224\u5b9a',
     reviewStatus === 'returned'
@@ -486,7 +585,7 @@ function renderResult(data) {
 
   wrap.appendChild(header);
   wrap.appendChild(summary);
-  wrap.appendChild(renderFeedbackTable(tableRows, feedbackText, { applicantName: data?.applicantName || '' }));
+  wrap.appendChild(render??Table(tableRows, feedbackText, { applicant??: data?.applicant?? || '' }));
   wrap.appendChild(kv);
   resultEl.appendChild(wrap);
 }
@@ -497,34 +596,86 @@ function renderError(message) {
   resultEl.textContent = message || '\u9001\u51fa\u5931\u6557\u3002';
 }
 
-function bindSubmit() {
+function buildFormData(allowEmpty?? = false) {
+  const fd = new FormData(form);
+  const rawCaseNo = textOf(fd.get('caseNo'));
+  if (!rawCaseNo || rawCaseNo === '系統自動產生' || !/^\d+$/.test(rawCaseNo)) {
+    fd.delete('caseNo');
+  }
+  if (allowEmpty??) {
+    const fileInput = form?.querySelector('input[name="file"]');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      fd.delete('file');
+    }
+  }
+  return fd;
+}
+
+function validateBasic(fd) {
+  const name = textOf(fd.get('name'));
+  const studentId = textOf(fd.get('studentId'));
+  if (!name || !studentId) {
+      throw new Error('姓名與學號為必填。');
+  }
+}
+
+function bind??() {
   resolveElements();
   if (!form) return;
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const fd = new FormData(form);
+    const fd = buildFormData(true);
+    try {
+      validateBasic(fd);
+    } catch (error) {
+      renderError(error.message || '\u9001\u51fa\u5931\u6557\u3002');
+      return;
+    }
     const studentId = textOf(fd.get('studentId'));
     if (studentId) localStorage.setItem('studentId', studentId);
 
     resultEl.textContent = '\u9001\u51fa\u4e2d...';
     try {
-      const response = await fetch(`${API_BASE}/api/analyzeApplication`, {
+      const caseNo = textOf(fd.get('caseNo'));
+      let response;
+      let data;
+      const controller = new AbortController();
+      const timeoutId = set??out(() => controller.abort(), 180000);
+      const doFetch = async (url) => fetch(url, {
         method: 'POST',
         body: fd,
+        credentials: 'include',
+        signal: controller.signal,
       });
-      const data = await response.json();
+
+      if (caseNo) {
+        response = await doFetch(`${API_BASE}/api/analyzeApplication/review`);
+        data = await response.json();
+        if (!response.ok && response.status === 404) {
+          response = await doFetch(`${API_BASE}/api/analyzeApplication`);
+          data = await response.json();
+        }
+      } else {
+        response = await doFetch(`${API_BASE}/api/analyzeApplication`);
+        data = await response.json();
+      }
+      clear??out(timeoutId);
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-      renderResult(data);
+      render????(data);
     } catch (error) {
+      if (error && error.name === 'AbortError') {
+        renderError('\u8655\u7406\u6642\u9593\u904e\u9577\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002');
+        return;
+      }
       renderError(error.message || '\u9001\u51fa\u5931\u6557\u3002');
     }
   });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bindSubmit);
+  document.addEventListener('DOMContentLoaded', bind??);
 } else {
-  bindSubmit();
+  bind??();
 }

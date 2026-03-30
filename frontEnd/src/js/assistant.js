@@ -58,7 +58,7 @@ const ASSIST_API_BASE = resolveApiBase();
 
   if (SpeechRecognition && micBtn) {
     recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    recognition.lang = 'zh-TW';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
@@ -83,7 +83,7 @@ const ASSIST_API_BASE = resolveApiBase();
     });
   } else if (micBtn) {
     micBtn.disabled = true;
-    micBtn.title = 'Speech input is not supported.';
+    micBtn.title = '???????????';
   }
 
   form.addEventListener('submit', async (e) => {
@@ -92,11 +92,11 @@ const ASSIST_API_BASE = resolveApiBase();
     if (!question) return;
     appendMessage('user', question);
     input.value = '';
-    appendMessage('assistant', 'Thinking...');
+    appendMessage('assistant', '????');
 
     let scope = {};
-    if (typeof window.getHistoryFilters === 'function') {
-      scope = window.getHistoryFilters() || {};
+    if (typeof window.getChatScope === 'function') {
+      scope = window.getChatScope() || {};
     }
 
     try {
@@ -108,17 +108,17 @@ const ASSIST_API_BASE = resolveApiBase();
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      const answer = data.answer || 'No answer.';
+      const answer = data.answer || '?????';
       body.lastChild.textContent = answer;
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(answer);
-        utter.lang = 'en-US';
+        utter.lang = 'zh-TW';
         utter.rate = 1;
         window.speechSynthesis.speak(utter);
       }
     } catch (err) {
-      body.lastChild.textContent = err.message || 'Request failed.';
+      body.lastChild.textContent = err.message || '?????';
     }
   });
 })();

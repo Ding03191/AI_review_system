@@ -1,74 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="api-base" content="http://127.0.0.1:5002">
-  <title>Review</title>
+  <title>自評 | AI 審核平台</title>
   <link rel="stylesheet" href="../src/css/review.css">
 </head>
-<body class="page-shell" data-page="review">
+<body class="page-shell role-pending" data-page="review">
   <header class="topbar" role="banner">
     <div class="brand">
       <span class="brand-badge" aria-hidden="true"></span>
-      <div class="brand-title">Review</div>
+      <div class="brand-title">AI 審核平台</div>
     </div>
     <div class="user-actions">
       <button class="avatar-btn" id="userMenuBtn" aria-haspopup="true" aria-expanded="false" data-user-initial>U</button>
-      <button class="gear-btn" id="userMenuGear" aria-label="User Menu">...</button>
+      <button class="gear-btn" id="userMenuGear" aria-label="使用者選單">...</button>
     </div>
   </header>
 
   <main class="layout" role="main">
     <aside class="sidebar">
-      <div class="nav-title">Review</div>
-      <a class="nav-item active" href="review.html">Submit</a>
-      <a class="nav-item" href="history.html">History</a>
-      <a class="nav-item" href="label.html" data-role="teacher">Teacher Review</a>
+      <div class="nav-title">審核</div>
+      <a class="nav-item active" href="review.html">自評</a>
+      <a class="nav-item" href="history.html">歷史紀錄</a>
+      <a class="nav-item is-hidden" href="Teacher_Review.html" data-role="teacher" style="display:none">老師審核</a>
     </aside>
 
     <section class="main">
       <div class="section-hd">
-        <h3>Submit Application</h3>
-        <p class="muted">Fill the form and upload the file.</p>
+        <h3>送出申請</h3>
+        <p class="muted">請填寫表單並上傳檔案。</p>
       </div>
 
       <div class="content-grid">
           <article class="card">
-            <div class="card-hd">Application</div>
+            <div class="card-hd">申請資料</div>
             <div class="card-bd">
               <form id="reviewForm" class="form">
                 <div class="grid g-2">
                   <label class="field">
-                    <span class="lbl req">Case No</span>
-                    <input name="caseNo" required>
+                    <span class="lbl">編號</span>
+                    <input name="caseNo" placeholder="系統自動產生" readonly>
                   </label>
                   <label class="field">
-                    <span class="lbl req">Name</span>
+                    <span class="lbl req">姓名</span>
                     <input name="name" required>
                   </label>
                   <label class="field">
-                    <span class="lbl req">Student ID</span>
+                    <span class="lbl req">學號</span>
                     <input name="studentId" required>
                   </label>
                   <label class="field">
-                    <span class="lbl req">File</span>
+                    <span class="lbl req">檔案</span>
                     <input type="file" name="file" accept=".pdf,.doc,.docx" required>
                   </label>
                 </div>
 
                 <div class="actions">
-                  <button class="btn primary" type="submit">Submit</button>
+                  <button class="btn primary" type="submit">自評</button>
                 </div>
               </form>
             </div>
           </article>
 
           <article class="card side-fill">
-            <div class="card-hd">Result</div>
+            <div class="card-hd">結果</div>
             <div class="card-bd">
-              <div id="reviewResult" class="kbd fillbox">Result will show here after submit.</div>
+              <div id="reviewResult" class="kbd fillbox">送出後結果會顯示在這裡。</div>
             </div>
           </article>
         </div>
@@ -77,16 +77,16 @@
 
   <div class="menu-panel" id="userMenuPanel" aria-hidden="true">
       <div class="menu-head">
-        <div class="menu-name" data-user-name>Student</div>
-        <div class="menu-sub" data-user-student>Student ID</div>
+        <div class="menu-name" data-user-name>使用者</div>
+        <div class="menu-sub" data-user-student>學號</div>
       </div>
-      <a class="menu-item" href="review.html">Profile</a>
-      <a class="menu-item" href="history.html">History</a>
-      <a class="menu-item" href="label.html" data-role="teacher">Teacher Review</a>
-      <button class="menu-item danger" type="button" id="btnLogout">Logout</button>
+      <a class="menu-item" href="review.html">自評</a>
+      <a class="menu-item" href="history.html">歷史紀錄</a>
+      <a class="menu-item is-hidden" href="Teacher_Review.html" data-role="teacher" style="display:none">老師審核</a>
+      <button class="menu-item danger" type="button" id="btnLogout">登出</button>
   </div>
 
-  <footer class="app-footer">AI Review</footer>
+  <footer class="app-footer">AI 審核平台</footer>
 
   <script src="../src/js/review.js" defer></script>
   <script src="../src/js/layout.js" defer></script>

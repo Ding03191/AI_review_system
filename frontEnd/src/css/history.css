@@ -61,3 +61,7 @@
   .records-table th:nth-child(7),
   .records-table td:nth-child(7){min-width:80px;}
 }
+
+body.role-pending [data-role="teacher"]{display:none !important}
+
+body.role-pending [data-user-initial]{visibility:hidden}

@@ -48,6 +48,8 @@ def init_db():
             aiFeedback TEXT,
             aiFeedbackTable TEXT,
             reviewStatus TEXT DEFAULT 'submitted',
+            isConfirmed INTEGER DEFAULT 0,
+            confirmedAt TEXT,
             finalIsPassed BOOLEAN,
             finalFeedback TEXT,
             finalFeedbackTable TEXT,
@@ -97,6 +99,8 @@ def init_db():
         ("course_name", "TEXT"),
         ("aiFeedbackTable", "TEXT"),
         ("reviewStatus", "TEXT"),
+        ("isConfirmed", "INTEGER"),
+        ("confirmedAt", "TEXT"),
         ("finalIsPassed", "BOOLEAN"),
         ("finalFeedback", "TEXT"),
         ("finalFeedbackTable", "TEXT"),
@@ -133,13 +137,15 @@ def insert_scoring_result(data):
             aiFeedback,
             aiFeedbackTable,
             reviewStatus,
+            isConfirmed,
+            confirmedAt,
             finalIsPassed,
             finalFeedback,
             finalFeedbackTable,
             reviewedAt,
             applyDate,
             applyTime
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data['applicantStdn'],
         data['applicantNo'],
@@ -151,6 +157,8 @@ def insert_scoring_result(data):
         data['aiFeedback'],
         json.dumps(data.get('aiFeedbackTable') or [], ensure_ascii=False),
         data.get('reviewStatus') or 'submitted',
+        int(bool(data.get('isConfirmed'))) if data.get('isConfirmed') is not None else 0,
+        data.get('confirmedAt'),
         data.get('finalIsPassed'),
         data.get('finalFeedback'),
         json.dumps(data.get('finalFeedbackTable') or [], ensure_ascii=False)
@@ -173,6 +181,99 @@ def has_history_record(applicant_stdn: str, applicant_no):
     ).fetchone()
     conn.close()
     return bool(row)
+
+
+def get_next_case_no():
+    conn = _connect()
+    c = conn.cursor()
+    row = c.execute(f"SELECT MAX(applicantNo) FROM {TABLE_NAME}").fetchone()
+    conn.close()
+    try:
+        return int(row[0] or 0) + 1
+    except Exception:
+        return 1
+
+
+def get_confirmed_record(applicant_stdn: str):
+    conn = _connect()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    row = c.execute(
+        f"""
+        SELECT applicantStdn,
+               applicantNo,
+               confirmedAt
+        FROM {TABLE_NAME}
+        WHERE applicantStdn = ? AND isConfirmed = 1
+        LIMIT 1
+        """,
+        (applicant_stdn,),
+    ).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        "applicantStdn": row["applicantStdn"],
+        "applicantNo": row["applicantNo"],
+        "confirmedAt": row["confirmedAt"],
+    }
+
+
+def confirm_history_record(applicant_stdn: str, applicant_no):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute(
+        f"""
+        UPDATE {TABLE_NAME}
+        SET isConfirmed = 1,
+            confirmedAt = datetime('now','localtime')
+        WHERE applicantStdn = ? AND applicantNo = ?
+        """,
+        (applicant_stdn, applicant_no),
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_ai_review_result(
+    applicant_stdn: str,
+    applicant_no,
+    is_passed: bool,
+    ai_feedback: str,
+    ai_feedback_table,
+    review_status: str,
+    file_name=None,
+    pdf_path=None,
+    course_name=None,
+):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute(
+        f"""
+        UPDATE {TABLE_NAME}
+        SET isPassed = ?,
+            aiFeedback = ?,
+            aiFeedbackTable = ?,
+            reviewStatus = ?,
+            file_name = COALESCE(?, file_name),
+            pdf_path = COALESCE(?, pdf_path),
+            course_name = COALESCE(?, course_name)
+        WHERE applicantStdn = ? AND applicantNo = ?
+        """,
+        (
+            int(bool(is_passed)),
+            ai_feedback,
+            json.dumps(ai_feedback_table or [], ensure_ascii=False),
+            review_status,
+            file_name,
+            pdf_path,
+            course_name,
+            applicant_stdn,
+            applicant_no,
+        ),
+    )
+    conn.commit()
+    conn.close()
 
 # 3. Optional: Fetch all history
 
@@ -229,6 +330,8 @@ def fetch_records_by_date(apply_date: str):
                 "aiFeedback": row["aiFeedback"],
                 "aiFeedbackTable": json.loads(row["aiFeedbackTable"]) if row["aiFeedbackTable"] else [],
                 "reviewStatus": row["reviewStatus"] or "submitted",
+                "isConfirmed": bool(row["isConfirmed"]) if row["isConfirmed"] is not None else False,
+                "confirmedAt": row["confirmedAt"],
                 "finalIsPassed": bool(row["finalIsPassed"]) if row["finalIsPassed"] is not None else None,
                 "finalFeedback": row["finalFeedback"],
                 "finalFeedbackTable": json.loads(row["finalFeedbackTable"]) if row["finalFeedbackTable"] else [],
@@ -277,6 +380,7 @@ def search_records(filters: dict | None = None, limit: int = 200, offset: int = 
     course_name = _clean(filters.get("course_name") or filters.get("courseName"))
     is_passed = _parse_bool(filters.get("is_passed") or filters.get("isPassed"))
     review_status = _clean(filters.get("review_status") or filters.get("reviewStatus"))
+    is_confirmed = _parse_bool(filters.get("is_confirmed") or filters.get("isConfirmed"))
     feedback_keyword = _clean(filters.get("feedback_keyword") or filters.get("feedbackKeyword"))
     file_keyword = _clean(filters.get("file_keyword") or filters.get("fileKeyword"))
 
@@ -315,6 +419,9 @@ def search_records(filters: dict | None = None, limit: int = 200, offset: int = 
     if review_status:
         where.append("reviewStatus = ?")
         params.append(review_status)
+    if is_confirmed is not None:
+        where.append("isConfirmed = ?")
+        params.append(1 if is_confirmed else 0)
     if feedback_keyword:
         where.append("aiFeedback LIKE ?")
         params.append(f"%{feedback_keyword}%")
@@ -355,6 +462,8 @@ def search_records(filters: dict | None = None, limit: int = 200, offset: int = 
                aiFeedback,
                aiFeedbackTable,
                reviewStatus,
+               isConfirmed,
+               confirmedAt,
                finalIsPassed,
                finalFeedback,
                finalFeedbackTable,
@@ -384,6 +493,8 @@ def search_records(filters: dict | None = None, limit: int = 200, offset: int = 
                 "aiFeedback": row["aiFeedback"],
                 "aiFeedbackTable": json.loads(row["aiFeedbackTable"]) if row["aiFeedbackTable"] else [],
                 "reviewStatus": row["reviewStatus"] or "submitted",
+                "isConfirmed": bool(row["isConfirmed"]) if row["isConfirmed"] is not None else False,
+                "confirmedAt": row["confirmedAt"],
                 "finalIsPassed": bool(row["finalIsPassed"]) if row["finalIsPassed"] is not None else None,
                 "finalFeedback": row["finalFeedback"],
                 "finalFeedbackTable": json.loads(row["finalFeedbackTable"]) if row["finalFeedbackTable"] else [],
@@ -416,6 +527,8 @@ def get_history_record(applicant_stdn: str, applicant_no):
                aiFeedback,
                aiFeedbackTable,
                reviewStatus,
+               isConfirmed,
+               confirmedAt,
                finalIsPassed,
                finalFeedback,
                finalFeedbackTable,
@@ -441,6 +554,8 @@ def get_history_record(applicant_stdn: str, applicant_no):
         "aiFeedback": row["aiFeedback"],
         "aiFeedbackTable": json.loads(row["aiFeedbackTable"]) if row["aiFeedbackTable"] else [],
         "reviewStatus": row["reviewStatus"] or "submitted",
+        "isConfirmed": bool(row["isConfirmed"]) if row["isConfirmed"] is not None else False,
+        "confirmedAt": row["confirmedAt"],
         "finalIsPassed": bool(row["finalIsPassed"]) if row["finalIsPassed"] is not None else None,
         "finalFeedback": row["finalFeedback"],
         "finalFeedbackTable": json.loads(row["finalFeedbackTable"]) if row["finalFeedbackTable"] else [],
@@ -552,6 +667,7 @@ def fetch_unlabeled_records(limit: int = 50, offset: int = 0):
           ON h.applicantStdn = l.applicantStdn
          AND h.applicantNo  = l.applicantNo
         WHERE l.id IS NULL
+          AND h.isConfirmed = 1
         """
     ).fetchone()[0]
 
@@ -567,6 +683,8 @@ def fetch_unlabeled_records(limit: int = 50, offset: int = 0):
                h.aiFeedback,
                h.aiFeedbackTable,
                h.reviewStatus,
+               h.isConfirmed,
+               h.confirmedAt,
                h.finalIsPassed,
                h.finalFeedback,
                h.finalFeedbackTable,
@@ -578,6 +696,7 @@ def fetch_unlabeled_records(limit: int = 50, offset: int = 0):
           ON h.applicantStdn = l.applicantStdn
          AND h.applicantNo  = l.applicantNo
         WHERE l.id IS NULL
+          AND h.isConfirmed = 1
         ORDER BY h.applyDate DESC, h.applyTime DESC
         LIMIT ? OFFSET ?
         """,
@@ -745,7 +864,8 @@ def get_next_unlabeled_history():
         LEFT JOIN {LABEL_TABLE_NAME} AS l
           ON h.applicantStdn = l.applicantStdn
          AND h.applicantNo  = l.applicantNo
-        WHERE l.id IS NULL          -- 尚未有標記資料
+        WHERE l.id IS NULL
+          AND h.isConfirmed = 1          -- 尚未有標記資料
         ORDER BY h.applyDate, h.applyTime
         LIMIT 1
     ''')
@@ -767,6 +887,8 @@ def get_next_unlabeled_history():
         "aiFeedback": row["aiFeedback"],
         "aiFeedbackTable": json.loads(row["aiFeedbackTable"]) if row["aiFeedbackTable"] else [],
         "reviewStatus": row["reviewStatus"] or "submitted",
+        "isConfirmed": bool(row["isConfirmed"]) if row["isConfirmed"] is not None else False,
+        "confirmedAt": row["confirmedAt"],
         "finalIsPassed": bool(row["finalIsPassed"]) if row["finalIsPassed"] is not None else None,
         "finalFeedback": row["finalFeedback"],
         "finalFeedbackTable": json.loads(row["finalFeedbackTable"]) if row["finalFeedbackTable"] else [],
@@ -840,6 +962,7 @@ def init_users_table():
 
 
 def get_conn():
+    init_users_table()
     return _connect()
 
 

@@ -34,9 +34,9 @@ const FIELD_META = {
 const MISSING_ITEM_TEXT = '未抓取到這個項目';
 const DISPLAY_MISSING_TEXT = '未找到';
 
-function el(tag, className, text) {
+function el(tag, class??, text) {
   const node = document.createElement(tag);
-  if (className) node.className = className;
+  if (class??) node.class?? = class??;
   if (text !== undefined) node.textContent = text;
   return node;
 }
@@ -88,7 +88,7 @@ function createEntry(fieldKey, value = '', status = 'other', note = '') {
   return { fieldKey, value: textOf(value), status, note: textOf(note) };
 }
 
-function extractNameValue(...parts) {
+function extract??Value(...parts) {
   const joined = parts.map(textOf).join('\n');
   const matches = [...joined.matchAll(/([\u4e00-\u9fff]{2,4})/g)].map((match) => match[1]);
   return matches.find((value) => !['\u4e2d\u6587\u59d3\u540d', '\u7533\u8acb\u4eba\u59d3\u540d', '\u8b49\u66f8\u59d3\u540d', '\u59d3\u540d'].includes(value)) || '';
@@ -156,7 +156,7 @@ function mergeUniqueText(existing, incoming) {
 
 function resolveFieldValue(fieldKey, resultText, itemText, context = {}) {
   if (isMissingItem(resultText) || hasMissingItemText(itemText)) return '';
-  if (fieldKey === 'name') return extractNameValue(resultText, itemText) || textOf(resultText) || textOf(context.applicantName);
+  if (fieldKey === 'name') return extract??Value(resultText, itemText) || textOf(resultText) || textOf(context.applicant??);
   if (fieldKey === 'course') {
     const extracted = extractCourseValues(resultText, itemText).join('\n');
     return extracted || (isMissingItem(resultText) ? '' : textOf(resultText));
@@ -209,7 +209,7 @@ function expandPackedRows(rawRows) {
 
   rows.forEach((row) => {
     const itemText = pickFirst(row, ['item', 'Item', '\u9805\u76ee', '\u8fa8\u8b58\u9805\u76ee']);
-    const resultText = pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM\u8fa8\u8b58\u5230\u7d50\u679c', '\u8fa8\u8b58\u7d50\u679c']);
+    const resultText = pickFirst(row, ['result', '辨識結果', 'LLM 辨識結果', 'LLM辨識結果', '辨識結果']);
     const passText = pickFirst(row, ['pass', 'Pass', '\u7b26\u5408', 'isPass', 'isPassed']) || '-';
     const failText = pickFirst(row, ['fail', 'Fail', '\u4e0d\u7b26\u5408']) || '-';
     const otherText = pickFirst(row, ['other', 'Other', '\u5176\u5b83', '\u5176\u4ed6']) || '-';
@@ -236,7 +236,7 @@ function expandPackedRows(rawRows) {
   return expanded;
 }
 
-function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
+function build??Bucket(rawRows, feedbackText, context = {}) {
   const rows = expandPackedRows(coerceRows(rawRows));
   const bucket = Object.fromEntries(FIELD_ORDER.map((fieldKey) => [fieldKey, null]));
 
@@ -264,7 +264,7 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
   rows.forEach((row) => {
     ingest(
       pickFirst(row, ['item', 'Item', '\u9805\u76ee', '\u8fa8\u8b58\u9805\u76ee']),
-      pickFirst(row, ['result', 'Result', 'LLM Result', 'LLM\u8fa8\u8b58\u5230\u7d50\u679c', '\u8fa8\u8b58\u7d50\u679c']),
+      pickFirst(row, ['result', '辨識結果', 'LLM 辨識結果', 'LLM辨識結果', '辨識結果']),
       pickFirst(row, ['pass', 'Pass', '\u7b26\u5408', 'isPass', 'isPassed']),
       pickFirst(row, ['fail', 'Fail', '\u4e0d\u7b26\u5408']),
       pickFirst(row, ['other', 'Other', '\u5176\u5b83', '\u5176\u4ed6']),
@@ -279,7 +279,7 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
       const related = lines.filter((line) => FIELD_META[fieldKey].keywords.some((keyword) => line.includes(keyword)));
       if (!related.length || bucket[fieldKey]) return;
       let value = '';
-      if (fieldKey === 'name') value = extractNameValue(...related) || textOf(context.applicantName);
+      if (fieldKey === 'name') value = extract??Value(...related) || textOf(context.applicant??);
       if (fieldKey === 'course') value = extractCourseValues(...related).join('\n');
       if (fieldKey === 'period') value = extractGenericValue('period', ...related);
       if (fieldKey === 'exam') value = extractGenericValue('exam', ...related);
@@ -293,18 +293,60 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
     });
   }
 
-  return (() => {
-    const output = [];
+  return bucket;
+}
 
-    FIELD_ORDER.forEach((fieldKey) => {
-      const entry = bucket[fieldKey];
-      const label = FIELD_META[fieldKey].label;
+function getCourseListFromBucket(bucket) {
+  return splitLines(bucket?.course?.value || '');
+}
 
-      if (!entry) {
+function splitCourseValues(value, courseCount) {
+  const lines = splitLines(value);
+  if (!courseCount || courseCount <= 1) return lines.length ? [lines.join('\n')] : [''];
+  const indexed = Array(courseCount).fill('');
+  let matched = false;
+  lines.forEach((line) => {
+    const match = line.match(/^\u8ab2\u7a0b\s*(\d+)\s*[:\uff1a]\s*(.+)$/);
+    if (!match) return;
+    const idx = Number.parseInt(match[1], 10) - 1;
+    if (Number.isNaN(idx) || idx < 0 || idx >= courseCount) return;
+    indexed[idx] = match[2].trim();
+    matched = true;
+  });
+  if (matched) return indexed;
+  if (lines.length >= courseCount) return lines.slice(0, courseCount);
+  return Array(courseCount).fill(lines.join('\n'));
+}
+
+function buildRowsFromBucket(bucket, options = {}) {
+  const output = [];
+  const courseIndex = Number.isInteger(options.courseIndex) ? options.courseIndex : null;
+  const courseList = getCourseListFromBucket(bucket);
+  const courseCount = courseList.length;
+
+  FIELD_ORDER.forEach((fieldKey) => {
+    const entry = bucket[fieldKey];
+    const label = FIELD_META[fieldKey].label;
+
+    if (!entry) {
+      output.push({
+        [COL_ITEM]: `${label}\uff1a${DISPLAY_MISSING_TEXT}`,
+        [COL_PASS]: '-',
+        [COL_FAIL]: DISPLAY_MISSING_TEXT,
+        [COL_OTHER]: '-',
+        [COL_LLM]: '',
+        [COL_REASON]: '',
+      });
+      return;
+    }
+
+    if (fieldKey === 'course') {
+      if (courseIndex !== null) {
+        const course?? = courseList[courseIndex] || '';
         output.push({
-          [COL_ITEM]: `${label}：${DISPLAY_MISSING_TEXT}`,
-          [COL_PASS]: '-',
-          [COL_FAIL]: DISPLAY_MISSING_TEXT,
+          [COL_ITEM]: `\u8ab2\u7a0b${courseIndex + 1}\uff1a${course?? || DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: entry.status === 'pass' ? '\u25cb' : '-',
+          [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
           [COL_OTHER]: '-',
           [COL_LLM]: '',
           [COL_REASON]: '',
@@ -312,54 +354,57 @@ function normalizeFeedbackRows(rawRows, feedbackText, context = {}) {
         return;
       }
 
-      if (fieldKey === 'course') {
-        const courses = (entry.value || '')
-          .split('\n')
-          .map((v) => v.trim())
-          .filter(Boolean);
-
-        if (courses.length) {
-          courses.forEach((course, index) => {
-            output.push({
-              [COL_ITEM]: `課程${index + 1}：${course}`,
-              [COL_PASS]: entry.status === 'pass' ? '○' : '-',
-              [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
-              [COL_OTHER]: '-',
-              [COL_LLM]: '',
-              [COL_REASON]: '',
-            });
-          });
-        } else {
+      if (courseList.length) {
+        courseList.forEach((course, index) => {
           output.push({
-            [COL_ITEM]: `課程1：${DISPLAY_MISSING_TEXT}`,
-            [COL_PASS]: '-',
-            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+            [COL_ITEM]: `\u8ab2\u7a0b${index + 1}\uff1a${course}`,
+            [COL_PASS]: entry.status === 'pass' ? '\u25cb' : '-',
+            [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
             [COL_OTHER]: '-',
             [COL_LLM]: '',
             [COL_REASON]: '',
           });
-        }
-        return;
+        });
+      } else {
+        output.push({
+          [COL_ITEM]: `\u8ab2\u7a0b1\uff1a${DISPLAY_MISSING_TEXT}`,
+          [COL_PASS]: '-',
+          [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : DISPLAY_MISSING_TEXT,
+          [COL_OTHER]: '-',
+          [COL_LLM]: '',
+          [COL_REASON]: '',
+        });
       }
+      return;
+    }
 
-      const itemText = entry.value ? `${label}：${entry.value}` : `${label}：${DISPLAY_MISSING_TEXT}`;
+    let value = entry.value || '';
+    if (courseIndex !== null && courseCount > 1 && value) {
+      const perCourseValues = splitCourseValues(value, courseCount);
+      value = perCourseValues[courseIndex] || '';
+    }
+    const itemText = value ? `${label}\uff1a${value}` : `${label}\uff1a${DISPLAY_MISSING_TEXT}`;
 
-      output.push({
-        [COL_ITEM]: itemText,
-        [COL_PASS]: entry.status === 'pass' ? '○' : '-',
-        [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
-        [COL_OTHER]: '-',
-        [COL_LLM]: '',
-        [COL_REASON]: '',
-      });
+    output.push({
+      [COL_ITEM]: itemText,
+      [COL_PASS]: entry.status === 'pass' ? '\u25cb' : '-',
+      [COL_FAIL]: entry.status === 'fail' ? (entry.note || DISPLAY_MISSING_TEXT) : '-',
+      [COL_OTHER]: '-',
+      [COL_LLM]: '',
+      [COL_REASON]: '',
     });
+  });
 
-    return output;
-  })();
+  return output;
+}
+
+function normalize??Rows(rawRows, feedbackText, context = {}, options = {}) {
+  const bucket = build??Bucket(rawRows, feedbackText, context);
+  return buildRowsFromBucket(bucket, options);
 }
 
 function getQuery() {
-  const q = new URLSearchParams(location.search);
+  const q = new URL??Params(location.search);
   return {
     applicantStdn: (q.get('applicantStdn') || '').trim(),
     applicantNo: (q.get('applicantNo') || '').trim(),
@@ -371,14 +416,10 @@ function backToList(source) {
   location.href = `label.html?tab=${encodeURIComponent(source || 'unlabeled')}`;
 }
 
-function renderFeedbackTable(rows, titleText, feedbackText, context = {}) {
-  const normalizedRows = normalizeFeedbackRows(rows, feedbackText, context);
-  if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) return null;
+function build??TableElement(dataRows) {
   const headers = [COL_ITEM, COL_PASS, COL_FAIL, COL_OTHER];
-  const wrap = el('div', 'table-wrap');
-  if (titleText) wrap.appendChild(el('div', 'review-label', titleText));
   const table = document.createElement('table');
-  table.className = 'ai-feedback-table compact';
+  table.class?? = 'ai-feedback-table compact';
   const thead = document.createElement('thead');
   const trh = document.createElement('tr');
   headers.forEach((h) => {
@@ -388,7 +429,7 @@ function renderFeedbackTable(rows, titleText, feedbackText, context = {}) {
   });
   thead.appendChild(trh);
   const tbody = document.createElement('tbody');
-  normalizedRows.forEach((row) => {
+  dataRows.forEach((row) => {
     const tr = document.createElement('tr');
     headers.forEach((h) => {
       const td = document.createElement('td');
@@ -401,7 +442,26 @@ function renderFeedbackTable(rows, titleText, feedbackText, context = {}) {
   });
   table.appendChild(thead);
   table.appendChild(tbody);
-  wrap.appendChild(table);
+  return table;
+}
+
+function render??Table(rows, titleText, feedbackText, context = {}) {
+  const bucket = build??Bucket(rows, feedbackText, context);
+  const courseList = getCourseListFromBucket(bucket);
+  const courseCount = courseList.length;
+  const wrap = el('div', 'table-wrap');
+  if (titleText) wrap.appendChild(el('div', 'review-label', titleText));
+  if (courseCount > 1) {
+    courseList.forEach((course??, index) => {
+      wrap.appendChild(el('div', 'review-label', `\u8ab2\u7a0b${index + 1}\uff1a${course?? || DISPLAY_MISSING_TEXT}`));
+      wrap.appendChild(build??TableElement(buildRowsFromBucket(bucket, { courseIndex: index })));
+    });
+    return wrap;
+  }
+
+  const normalizedRows = buildRowsFromBucket(bucket);
+  if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) return null;
+  wrap.appendChild(build??TableElement(normalizedRows));
   return wrap;
 }
 
@@ -420,13 +480,12 @@ function normalizeEditableRows(rows) {
   });
 }
 
-function buildEditableTable(rows, locked) {
-  const headers = [COL_ITEM, COL_PASS, COL_FAIL, COL_OTHER, 'Action'];
+function buildEditableTableElement(rows, locked) {
+  const headers = [COL_ITEM, COL_PASS, COL_FAIL, COL_OTHER, '操作'];
   const wrap = el('div', 'table-wrap');
-  wrap.appendChild(el('div', 'review-label', 'Teacher Edit Table'));
 
   const table = document.createElement('table');
-  table.className = 'ai-feedback-table';
+  table.class?? = 'ai-feedback-table';
   const thead = document.createElement('thead');
   const trh = document.createElement('tr');
   headers.forEach((h) => {
@@ -449,11 +508,11 @@ function buildEditableTable(rows, locked) {
     inputItem.dataset.field = 'item';
     tdItem.appendChild(inputItem);
 
-    const inputResult = document.createElement('input');
-    inputResult.type = 'hidden';
-    inputResult.value = data.result || '';
-    inputResult.dataset.field = 'result';
-    tdItem.appendChild(inputResult);
+    const input???? = document.createElement('input');
+    input????.type = 'hidden';
+    input????.value = data.result || '';
+    input????.dataset.field = 'result';
+    tdItem.appendChild(input????);
 
     const tdPass = document.createElement('td');
     const passRadio = document.createElement('input');
@@ -483,29 +542,29 @@ function buildEditableTable(rows, locked) {
     inputOther.dataset.field = 'reason';
     tdOther.appendChild(inputOther);
 
-    const tdAction = document.createElement('td');
+    const td操作 = document.createElement('td');
     if (!locked) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn ghost sm';
-      btn.textContent = 'Remove';
+      btn.class?? = 'btn ghost sm';
+      btn.textContent = '移除';
       btn.addEventListener('click', () => {
         tr.remove();
       });
-      tdAction.appendChild(btn);
+      td操作.appendChild(btn);
     } else {
-      tdAction.textContent = '-';
+      td操作.textContent = '-';
     }
 
     tr.appendChild(tdItem);
     tr.appendChild(tdPass);
     tr.appendChild(tdFail);
     tr.appendChild(tdOther);
-    tr.appendChild(tdAction);
+    tr.appendChild(td操作);
     tbody.appendChild(tr);
   }
 
-  const list = normalizeEditableRows(normalizeFeedbackRows(rows));
+  const list = normalizeEditableRows(rows);
   if (list.length === 0) {
     addRow();
   } else {
@@ -518,7 +577,7 @@ function buildEditableTable(rows, locked) {
 
   if (!locked) {
     const actions = el('div', 'table-actions');
-    const addBtn = el('button', 'btn ghost', 'Add Row');
+    const addBtn = el('button', 'btn ghost', '新增列');
     addBtn.type = 'button';
     addBtn.addEventListener('click', () => addRow());
     actions.appendChild(addBtn);
@@ -540,6 +599,34 @@ function buildEditableTable(rows, locked) {
     }).filter((row) => row.item || row.result || row.reason);
   };
 
+  return wrap;
+}
+
+function buildEditableTables(rows, locked) {
+  const bucket = build??Bucket(rows);
+  const courseList = getCourseListFromBucket(bucket);
+  const courseCount = courseList.length;
+  const wrap = el('div', 'table-wrap');
+  wrap.appendChild(el('div', 'review-label', '編修表格'));
+
+  if (courseCount > 1) {
+    const tables = [];
+    courseList.forEach((course??, index) => {
+      wrap.appendChild(el('div', 'review-label', `\u8ab2\u7a0b${index + 1}\uff1a${course?? || DISPLAY_MISSING_TEXT}`));
+      const rowsForCourse = buildRowsFromBucket(bucket, { courseIndex: index });
+      const table = buildEditableTableElement(rowsForCourse, locked);
+      tables.push(table);
+      wrap.appendChild(table);
+    });
+
+    wrap.getRows = () => tables.flatMap((table) => table.getRows());
+    return wrap;
+  }
+
+  const list = normalize??Rows(rows);
+  const table = buildEditableTableElement(list, locked);
+  wrap.appendChild(table);
+  wrap.getRows = () => table.getRows();
   return wrap;
 }
 
@@ -570,7 +657,7 @@ function createRegionEditor(overlayEl, countEl) {
   }
 
   function updateCount() {
-    if (countEl) countEl.textContent = `Regions: ${state.regions.length}`;
+    if (countEl) countEl.textContent = `æ¨è¨»åå¡ï¼${state.regions.length}`;
   }
 
   function renderRegions() {
@@ -588,7 +675,7 @@ function createRegionEditor(overlayEl, countEl) {
         top = r.y - (scrollState.scrollTop - (r.scrollTop || 0)) / baseH;
       }
       const node = document.createElement('div');
-      node.className = 'selection-box';
+      node.class?? = 'selection-box';
       node.style.left = `${left * 100}%`;
       node.style.top = `${top * 100}%`;
       node.style.width = `${width * 100}%`;
@@ -647,7 +734,7 @@ function createRegionEditor(overlayEl, countEl) {
     state.startX = e.clientX - rect.left;
     state.startY = e.clientY - rect.top;
     const node = document.createElement('div');
-    node.className = 'selection-box active';
+    node.class?? = 'selection-box active';
     node.style.left = `${state.startX}px`;
     node.style.top = `${state.startY}px`;
     node.style.width = '0px';
@@ -732,31 +819,31 @@ function renderDetail(host, rec, source) {
   const locked = !!rec.label;
 
   const header = el('div', 'fbx-hd');
-  const pill = el('span', `pill ${rec.isPassed ? 'ok' : 'ng'}`, rec.isPassed ? 'AI PASS' : 'AI FAIL');
-  const title = el('div', 'review-label', 'AI Result');
+  const pill = el('span', `pill ${rec.isPassed ? 'ok' : 'ng'}`, rec.isPassed ? 'AI 通過' : 'AI 不通過');
+  const title = el('div', 'review-label', 'AI 審核結果');
   header.appendChild(pill);
   header.appendChild(title);
 
-  const feedbackTable = renderFeedbackTable(
-    rec.aiFeedbackTable,
-    'AI Table',
-    rec.aiFeedback || '',
-    { applicantName: rec.applicantName || '' }
+  const feedbackTable = render??Table(
+    rec.ai??Table,
+    'AI 表格',
+    rec.ai?? || '',
+    { applicant??: rec.applicant?? || '' }
   );
 
   const pdfWrap = el('div', 'pdf-wrap');
-  const pdfTitle = el('div', 'review-label', 'PDF Preview');
+  const pdfTitle = el('div', 'review-label', 'PDF 預覽');
   const toolRow = el('div', 'pdf-tool-row');
-  const btnToggleDraw = el('button', 'btn ghost', 'Marking: Off');
+  const btnToggleDraw = el('button', 'btn ghost', '標註：關閉');
   btnToggleDraw.type = 'button';
-  const btnUndo = el('button', 'btn ghost', 'Undo');
-  btnUndo.type = 'button';
-  const btnClear = el('button', 'btn ghost', 'Clear');
-  btnClear.type = 'button';
-  const boxCount = el('span', 'muted', 'Regions: 0');
+  const btn復原 = el('button', 'btn ghost', '復原');
+  btn復原.type = 'button';
+  const btn清除 = el('button', 'btn ghost', '清除');
+  btn清除.type = 'button';
+  const boxCount = el('span', 'muted', '標註區塊：0');
   toolRow.appendChild(btnToggleDraw);
-  toolRow.appendChild(btnUndo);
-  toolRow.appendChild(btnClear);
+  toolRow.appendChild(btn復原);
+  toolRow.appendChild(btn清除);
   toolRow.appendChild(boxCount);
 
   const stage = el('div', 'pdf-stage');
@@ -789,7 +876,7 @@ function renderDetail(host, rec, source) {
     if (!rec.pdf_path) return;
     const pdfjsLib = ensurePdfJs();
     if (!pdfjsLib) {
-      canvasWrap.textContent = 'PDF.js not loaded.';
+      canvasWrap.textContent = 'PDF.js 尚未載入。';
       return;
     }
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -802,7 +889,7 @@ function renderDetail(host, rec, source) {
       await renderAllPages();
       editor.refresh();
     } catch (err) {
-      canvasWrap.textContent = err?.message || 'PDF load failed.';
+      canvasWrap.textContent = err?.message || 'PDF 載入失敗。';
     }
   }
 
@@ -824,7 +911,7 @@ function renderDetail(host, rec, source) {
       const page = await pdfDoc.getPage(i);
       const viewport = page.getViewport({ scale });
       const canvas = document.createElement('canvas');
-      canvas.className = 'pdf-page-canvas';
+      canvas.class?? = 'pdf-page-canvas';
       const ctx = canvas.getContext('2d');
       canvas.width = Math.floor(viewport.width * outputScale);
       canvas.height = Math.floor(viewport.height * outputScale);
@@ -842,8 +929,8 @@ function renderDetail(host, rec, source) {
     let t = null;
     return () => {
       if (!pdfDoc) return;
-      if (t) clearTimeout(t);
-      t = setTimeout(() => {
+      if (t) clear??out(t);
+      t = set??out(() => {
         renderAllPages();
       }, 200);
     };
@@ -854,21 +941,21 @@ function renderDetail(host, rec, source) {
   btnToggleDraw.addEventListener('click', () => {
     drawEnabled = !drawEnabled;
     applyDrawState(drawEnabled);
-    btnToggleDraw.textContent = drawEnabled ? 'Marking: On' : 'Marking: Off';
+    btnToggleDraw.textContent = drawEnabled ? '標註：開啟' : '標註：關閉';
   });
-  btnUndo.addEventListener('click', () => editor.undoLast());
-  btnClear.addEventListener('click', () => editor.clearAll());
+  btn復原.addEventListener('click', () => editor.undoLast());
+  btn清除.addEventListener('click', () => editor.clearAll());
 
-  const editableTable = buildEditableTable(
-    (rec.label && rec.label.correctedFeedbackTable?.length ? rec.label.correctedFeedbackTable : rec.aiFeedbackTable) || [],
+  const editableTable = buildEditableTables(
+    (rec.label && rec.label.corrected??Table?.length ? rec.label.corrected??Table : rec.ai??Table) || [],
     locked
   );
 
   const form = el('form', 'label-form');
   form.innerHTML = `
     <div class="actions">
-      <button class="btn ghost" type="button" id="btnCancelLabel">Back</button>
-      <button class="btn primary" type="submit">Save</button>
+      <button class="btn ghost" type="button" id="btnCancelLabel">返回</button>
+      <button class="btn primary" type="submit">儲存</button>
     </div>
   `;
 
@@ -877,7 +964,7 @@ function renderDetail(host, rec, source) {
       if (node.id === 'btnCancelLabel') return;
       node.disabled = true;
     });
-    const lockNote = el('div', 'muted', 'This record is submitted and locked.');
+    const lockNote = el('div', 'muted', '此筆資料已提交並鎖定。');
     form.insertBefore(lockNote, form.firstChild);
   }
 
@@ -896,7 +983,7 @@ function renderDetail(host, rec, source) {
     const anyFail = rows.some((row) => row.status === 'fail');
     const correctedIsPassed = allPass ? true : anyFail ? false : null;
     const reviewStatus = correctedIsPassed === true ? 'approved' : correctedIsPassed === false ? 'rejected' : 'returned';
-    const correctedFeedbackTable = rows.map((row) => ({
+    const corrected??Table = rows.map((row) => ({
       [COL_ITEM]: row.item,
       [COL_LLM]: row.result,
       [COL_PASS]: row.status === 'pass' ? '\u662f' : '\u5426',
@@ -909,8 +996,8 @@ function renderDetail(host, rec, source) {
       applicantNo: rec.applicantNo,
       reviewStatus,
       correctedIsPassed,
-      correctedFeedback: '',
-      correctedFeedbackTable,
+      corrected??: '',
+      corrected??Table,
       reviewer: '',
       reviewComment: '',
       selectedRegions: editor.getRegions(),
@@ -924,10 +1011,10 @@ function renderDetail(host, rec, source) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      alert('Submitted.');
+      alert('已提交。');
       backToList('labeled');
     } catch (err) {
-      alert(err.message || 'Submit failed.');
+      alert(err.message || '提交失敗。');
     }
   });
 
@@ -949,7 +1036,7 @@ async function initPage() {
 
   if (!host) return;
   if (!applicantStdn || !applicantNo) {
-    host.textContent = 'Missing applicantStdn or applicantNo';
+    host.textContent = '缺少學號或編號';
     return;
   }
 
@@ -960,7 +1047,7 @@ async function initPage() {
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     renderDetail(host, data, source);
   } catch (err) {
-    host.textContent = err.message || 'Load failed.';
+    host.textContent = err.message || '載入失敗。';
   }
 }
 

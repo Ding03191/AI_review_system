@@ -1,44 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="api-base" content="http://127.0.0.1:5002">
-  <title>Register | System</title>
-  <link rel="stylesheet" href="../src/css/review.css">
+  <title>註冊 | AI 審核平台</title>
+  <link rel="stylesheet" href="../src/css/register.css">
 </head>
 <body class="auth-page">
   <main class="auth-wrap">
     <div class="auth-logo">
       <div class="logo-mark"></div>
-      <div class="logo-text">Review</div>
+      <div class="logo-text">AI 審核平台</div>
     </div>
 
     <section class="auth-card-simple">
-      <div class="auth-title">Create Account</div>
+      <div class="auth-title">建立帳號</div>
 
       <div class="auth-field">
-        <label>Name</label>
+        <label>姓名</label>
         <input form="formRegister" type="text" name="name" required>
       </div>
       <div class="auth-field">
-        <label>Student ID</label>
+        <label>學號</label>
         <input form="formRegister" type="text" name="studentId" required>
       </div>
       <div class="auth-field">
-        <label>Password</label>
+        <label>密碼</label>
         <input form="formRegister" id="registerPwd" type="password" name="password" minlength="6" required>
       </div>
 
       <div id="registerError" class="auth-error"></div>
 
       <form id="formRegister">
-        <button type="submit" class="btn primary full">Register</button>
+        <button type="submit" class="btn primary full">註冊</button>
       </form>
 
       <div class="auth-foot">
-        <a href="login.html">Back to login</a>
+        <a href="login.html">已經有帳號，請登入</a>
       </div>
     </section>
   </main>

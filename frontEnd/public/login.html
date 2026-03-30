@@ -1,44 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="api-base" content="http://127.0.0.1:5002">
-  <title>Login | System</title>
-  <link rel="stylesheet" href="../src/css/review.css">
+  <title>登入 | AI 審核平台</title>
+  <link rel="stylesheet" href="../src/css/login.css">
 </head>
 <body class="auth-page">
   <main class="auth-wrap">
     <div class="auth-logo">
       <div class="logo-mark"></div>
-      <div class="logo-text">Review</div>
+      <div class="logo-text">AI 審核平台</div>
     </div>
 
     <section class="auth-card-simple">
-      <button class="btn ghost full" type="button" id="btnGoogleLogin">Sign in with Google</button>
+      <button class="btn ghost full" type="button" id="btnGoogleLogin">使用 Google 登入</button>
 
       <form id="formLogin">
         <div class="auth-field">
-          <label>Student ID</label>
+          <label>學號</label>
           <input type="text" name="studentId" required>
         </div>
         <div class="auth-field">
-          <label>Password</label>
+          <label>密碼</label>
           <input id="loginPwd" type="password" name="password" minlength="6" required>
         </div>
 
         <label class="auth-check">
-          <input type="checkbox"> Keep me signed in
+          <input type="checkbox"> 保持登入
         </label>
 
         <div id="loginError" class="auth-error"></div>
 
-        <button type="submit" class="btn primary full">Login</button>
+        <button type="submit" class="btn primary full">登入</button>
       </form>
 
       <div class="auth-foot">
-        No account? <a href="register.html">Register</a>
+        沒有帳號，請註冊 <a href="register.html">註冊</a>
       </div>
     </section>
   </main>

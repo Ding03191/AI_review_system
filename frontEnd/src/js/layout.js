@@ -23,31 +23,39 @@ function getStoredUser() {
   }
 }
 
+function getSurname(name) {
+  const text = String(name || '').trim();
+  if (!text) return '';
+  return text.slice(0, 1);
+}
+
 function updateUserRail() {
   const user = getStoredUser();
   const studentId = user.studentId || localStorage.getItem('studentId') || '';
-  const role = user.role || '';
-  const isTeacher = role && role !== 'applicant';
+  const displayName = (user.name || user.studentName || '').toString().trim();
+  const surname = getSurname(displayName) || (studentId || 'U').trim().slice(0, 1) || 'U';
 
   document.querySelectorAll('[data-user-name]').forEach((el) => {
-    el.textContent = isTeacher ? 'Teacher' : `Student ID: ${studentId || '--'}`;
+    el.textContent = `姓名: ${displayName || '--'}`;
   });
   document.querySelectorAll('[data-user-student]').forEach((el) => {
-    if (isTeacher) {
-      el.textContent = '';
-      el.classList.add('is-hidden');
-    } else {
-      el.classList.remove('is-hidden');
-      el.textContent = `Student ID: ${studentId || '--'}`;
-    }
+    el.textContent = `學號: ${studentId || '--'}`;
   });
   document.querySelectorAll('[data-user-initial]').forEach((el) => {
-    const initial = (studentId || 'U').trim().slice(0, 1);
-    el.textContent = initial || 'U';
+    el.textContent = surname;
+    el.style.visibility = 'visible';
   });
 
+  const role = (user.role || '').trim();
+  const isTeacher = !!role && role !== 'applicant';
   document.querySelectorAll('[data-role="teacher"]').forEach((el) => {
-    el.classList.toggle('is-hidden', !isTeacher);
+    if (isTeacher) {
+      el.classList.remove('is-hidden');
+      el.style.display = '';
+    } else {
+      el.classList.add('is-hidden');
+      el.style.display = 'none';
+    }
   });
 }
 
@@ -69,6 +77,7 @@ async function syncUserSession() {
     }
   } catch (e) {}
   localStorage.removeItem('user');
+  localStorage.removeItem('userName');
   localStorage.removeItem('studentId');
   if (!isAuthPage()) {
     location.href = 'login.html';
@@ -77,24 +86,24 @@ async function syncUserSession() {
 }
 
 function bindUserMenu() {
-  const btn = document.getElementById('userMenuBtn');
   const gear = document.getElementById('userMenuGear');
   const panel = document.getElementById('userMenuPanel');
   const logoutBtn = document.getElementById('btnLogout');
-  if (!btn || !panel) return;
+  if (!gear || !panel) return;
 
   function closeMenu() {
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
-    btn.setAttribute('aria-expanded', 'false');
+    gear.setAttribute('aria-expanded', 'false');
   }
+
   function openMenu() {
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
-    btn.setAttribute('aria-expanded', 'true');
+    gear.setAttribute('aria-expanded', 'true');
   }
 
-  btn.addEventListener('click', (e) => {
+  gear.addEventListener('click', (e) => {
     e.stopPropagation();
     if (panel.classList.contains('open')) {
       closeMenu();
@@ -102,19 +111,9 @@ function bindUserMenu() {
       openMenu();
     }
   });
-  if (gear) {
-    gear.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (panel.classList.contains('open')) {
-        closeMenu();
-      } else {
-        openMenu();
-      }
-    });
-  }
 
   document.addEventListener('click', (e) => {
-    if (!panel.contains(e.target) && !btn.contains(e.target)) closeMenu();
+    if (!panel.contains(e.target) && !gear.contains(e.target)) closeMenu();
   });
 
   if (logoutBtn) {
@@ -137,6 +136,7 @@ async function initLayout() {
   await syncUserSession();
   updateUserRail();
   bindUserMenu();
+  document.body.classList.remove('role-pending');
 }
 
 if (document.readyState === 'loading') {

@@ -212,7 +212,12 @@ def _ocr_pdf_pages(pdf_path):
 def _extract_pdf_text(pdf_path):
     extracted_pages = _extract_text_pages(pdf_path)
     enhanced_path = _enhance_pdf_for_ai(pdf_path)
-    ocr_pages = _ocr_pdf_pages(enhanced_path)
+    extracted_text = "\n".join((page or "") for page in extracted_pages)
+    extracted_score = len(re.findall(r"[\u4e00-\u9fffA-Za-z0-9]", extracted_text))
+
+    ocr_pages = []
+    if extracted_score < 200:
+        ocr_pages = _ocr_pdf_pages(enhanced_path)
 
     page_count = max(len(extracted_pages), len(ocr_pages))
     merged_pages = []
@@ -602,27 +607,31 @@ def _analyze_with_ai(pdf_text, form_data):
         text = _t(value).lower()
         return text in {"○", "◯", "o", "yes", "y", "true", "1", "pass", "passed", "符合", "是"}
 
-    def _is_false_mark(value):
-        text = _t(value).lower()
-        return text in {"否", "no", "n", "false", "0"}
-
-    def _is_missing(value):
-        return "未抓取到這個項目" in _t(value)
+    def _is_failure_cell(value):
+        text = _t(value)
+        if _is_blank(text):
+            return False
+        if text == "-":
+            return False
+        return True
 
     def _row_failed(row):
         pass_text = _t(row.get("pass"))
         fail_text = _t(row.get("fail"))
         other_text = _t(row.get("other"))
-        if _is_marked(pass_text):
-            return False
-        if _is_missing(fail_text) or _is_missing(other_text):
-            return True
-        if not _is_blank(fail_text) and not _is_false_mark(fail_text):
-            return True
-        return False
 
-    if table_rows and any(_row_failed(row) for row in table_rows):
-        is_passed = False
+        if _is_marked(pass_text) and not _is_failure_cell(fail_text) and not _is_failure_cell(other_text):
+            return False
+
+        if _is_failure_cell(fail_text) or _is_failure_cell(other_text):
+            return True
+
+        return True
+
+        return True
+
+    if table_rows:
+        is_passed = not any(_row_failed(row) for row in table_rows)
 
     return {
         "isPassed": bool(is_passed),
@@ -658,12 +667,20 @@ def analyze_application():
     course_list, duplicates = _normalize_courses(raw_courses)
     course_name = ", ".join(course_list)
 
-    if not applicant_no or not applicant_name or not applicant_stdn:
-        return jsonify({"error": "caseNo, name, and studentId are required."}), 400
+    if not applicant_name or not applicant_stdn:
+        return jsonify({"error": "name and studentId are required."}), 400
     if duplicates:
         return jsonify({"error": "Duplicate course names are not allowed."}), 400
 
-    applicant_no_value = int(applicant_no) if applicant_no.isdigit() else applicant_no
+    confirmed = db.get_confirmed_record(applicant_stdn)
+    if confirmed:
+        return jsonify({"error": "A record has already been submitted."}), 409
+
+    if not applicant_no:
+        applicant_no_value = db.get_next_case_no()
+        applicant_no = str(applicant_no_value)
+    else:
+        applicant_no_value = int(applicant_no) if applicant_no.isdigit() else applicant_no
     if db.has_history_record(applicant_stdn, applicant_no_value):
         return jsonify({"error": "Case already exists. Please submit a new case number."}), 409
 
